@@ -1,6 +1,7 @@
-import { HydrateClient } from "~/trpc/server";
+import { api, HydrateClient } from "~/trpc/server";
 
 export default async function Home() {
+  const vtable = await api.vtable.getTable({ id: 1 });
   return (
     <HydrateClient>
       <main>
