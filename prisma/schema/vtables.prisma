@@ -1,0 +1,45 @@
+model v_tables {
+    id         Int         @id @default(autoincrement())
+    name       String
+    owner_id   String?     @db.Uuid
+    created_at DateTime    @default(now()) @db.Timestamp(6)
+    v_columns  v_columns[]
+    v_rows     v_rows[]
+    users      users?      @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "v_tables_owner_id_users_id_fk")
+}
+
+model v_columns {
+    id       Int           @id @default(autoincrement())
+    table_id Int
+    name     String
+    type     v_column_type
+    options  Json?         @default("{}")
+    v_cells  v_cells[]
+    v_tables v_tables      @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "v_columns_table_id_v_tables_id_fk")
+}
+
+enum v_column_type {
+    text
+    number
+    date
+    boolean
+    select
+    relation
+}
+
+model v_rows {
+    id         Int       @id @default(autoincrement())
+    table_id   Int
+    created_at DateTime  @default(now()) @db.Timestamp(6)
+    v_cells    v_cells[]
+    v_tables   v_tables  @relation(fields: [table_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "v_rows_table_id_v_tables_id_fk")
+}
+
+model v_cells {
+    id        Int       @id @default(autoincrement())
+    row_id    Int
+    column_id Int
+    value     String?
+    v_columns v_columns @relation(fields: [column_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "v_cells_column_id_v_columns_id_fk")
+    v_rows    v_rows    @relation(fields: [row_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "v_cells_row_id_v_rows_id_fk")
+}

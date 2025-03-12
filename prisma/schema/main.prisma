@@ -1,0 +1,11 @@
+generator client {
+    provider        = "prisma-kysely"
+    output          = "../../src/server/database"
+    previewFeatures = ["prismaSchemaFolder"]
+    fileName        = "db.types.ts"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
