@@ -11,16 +11,3 @@ export default async function Home() {
     </HydrateClient>
   );
 }
-
-// // @ts-ignore
-// export const page = createTable("page", {
-//   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
-//   title: varchar("title", { length: 256 }),
-//   content: text("content"),
-//   createdAt: timestamp("created_at").notNull().defaultNow(),
-
-//   userId: integer("user_id").references(() => user.id),
-//   // Self-reference: a page may reference a parent page (null for root pages)
-//   // @ts-ignore
-//   parent: integer("parent").references(() => page.id),
-// });

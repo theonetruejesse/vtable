@@ -1,6 +1,5 @@
 import { Kysely, PostgresDialect } from "kysely";
-// pnpm db:generate >> generated types
-import { type DB } from "./db.types";
+import { type DB } from "./db.types"; // pnpm db:generate >> generated types
 import pc from "../common/pc";
 import { Logger } from "../common/logger";
 import { Pool } from "pg";
