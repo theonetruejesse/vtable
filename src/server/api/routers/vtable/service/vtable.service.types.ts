@@ -1,10 +1,11 @@
-import { Selectable } from "kysely";
-import { v_column_type, v_columns, v_tables } from "~/server/database/db.types";
+import { v_column_type } from "~/server/database/db.types";
 import {
   VTableColumnObject,
   VTableObject,
   VRowObject,
 } from "../repository/vtable.repository.types";
+
+// these schemas can be optimized later to avoid data redundancy and ease of use; but this is fine for now
 
 export const DEFAULT_COLUMNS: DefaultColumnDefinition[] = [
   {
