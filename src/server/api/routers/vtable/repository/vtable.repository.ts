@@ -26,6 +26,7 @@ import {
   DeleteVTableColumnInput,
   DeleteVRowInput,
   DeleteVCellInput,
+  VTableFullData,
 } from "./vtable.repository.types";
 
 class VTableRepository {
@@ -473,6 +474,62 @@ class VTableRepository {
     });
 
     return updatedCount;
+  }
+
+  /**
+   * Get all VTable data in the minimal number of database calls without formatting or structuring
+   * This method performs only the absolutely necessary database queries
+   */
+  public async getFullVTable(input: GetVTableInput): Promise<VTableFullData> {
+    const { id } = input;
+
+    this.logger.debug(
+      `Getting full VTable data with id: ${id} with minimal queries`,
+    );
+
+    // First get the table to make sure it exists, and columns (parallel)
+    const [table, columns] = await Promise.all([
+      db
+        .selectFrom("v_tables")
+        .selectAll()
+        .where("id", "=", id)
+        .executeTakeFirst() || null,
+      db
+        .selectFrom("v_columns")
+        .selectAll()
+        .where("table_id", "=", id)
+        .execute(),
+    ]);
+
+    // If table doesn't exist, return empty result
+    if (!table) {
+      return {
+        table: null,
+        columns: [],
+        rowsWithCells: [],
+      };
+    }
+
+    // Get all rows and cells for this table in one query using joins
+    const rowsWithCells = await db
+      .selectFrom("v_rows")
+      .leftJoin("v_cells", "v_cells.row_id", "v_rows.id")
+      .select([
+        "v_rows.id as row_id",
+        "v_rows.table_id",
+        "v_rows.created_at as row_created_at",
+        "v_cells.id as cell_id",
+        "v_cells.column_id",
+        "v_cells.value",
+      ])
+      .where("v_rows.table_id", "=", id)
+      .execute();
+
+    return {
+      table,
+      columns,
+      rowsWithCells,
+    };
   }
 }
 

@@ -49,11 +49,11 @@ export type GetVTableServiceInput = {
   id: number;
 };
 
-// Types for assembled table data
-export type VTableColumnWithCells = VTableColumnObject & {
-  cells: VTableCellData[];
-};
+// Types for structuring and assembling VTable data
 
+/**
+ * Cell data formatted for the frontend
+ */
 export type VTableCellData = {
   id: number;
   row_id: number;
@@ -61,11 +61,16 @@ export type VTableCellData = {
   value: string | null;
 };
 
+/**
+ * Row with its associated cells
+ */
 export type VTableRowWithCells = VRowObject & {
   cells: VTableCellData[];
 };
 
-// The fully assembled table structure for frontend consumption
+/**
+ * The fully assembled table structure for frontend consumption
+ */
 export type AssembledVTable = {
   table: VTableObject;
   columns: VTableColumnObject[];

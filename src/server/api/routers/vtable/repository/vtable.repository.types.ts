@@ -111,3 +111,24 @@ export type DeleteVRowInput = {
 export type DeleteVCellInput = {
   id: number;
 };
+
+/**
+ * Raw row and cell data from a join query
+ */
+export type VTableRowCellJoinResult = {
+  row_id: number;
+  table_id: number;
+  row_created_at: Date;
+  cell_id: number | null;
+  column_id: number | null;
+  value: string | null;
+};
+
+/**
+ * Full VTable data as returned by getFullVTable
+ */
+export type VTableFullData = {
+  table: VTableObject | null;
+  columns: VTableColumnObject[];
+  rowsWithCells: VTableRowCellJoinResult[];
+};

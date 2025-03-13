@@ -5,6 +5,7 @@ import {
   UpdateVCellByPositionInput,
   VTableObject,
   VCellObject,
+  VTableFullData,
 } from "../repository/vtable.repository.types";
 import { db } from "~/server/database/db";
 import { v_column_type } from "~/server/database/db.types";
@@ -38,7 +39,7 @@ class VTableService {
     this.logger.debug(`Creating VTable with name: ${name}`);
 
     // Use a transaction to ensure all related records are created atomically
-    return await db.transaction().execute(async (trx) => {
+    const tableId = await db.transaction().execute(async (trx) => {
       // 1. Create the table
       const table = await vTableRepository.createVTable({
         name,
@@ -87,20 +88,22 @@ class VTableService {
         };
       });
 
-      const cells = await vTableRepository.bulkCreateVCells(cellInputs);
+      await vTableRepository.bulkCreateVCells(cellInputs);
 
-      // 5. Construct and return the assembled table
-      const rowWithCells: VTableRowWithCells = {
-        ...row,
-        cells: cells as VTableCellData[],
-      };
-
-      return {
-        table,
-        columns,
-        rows: [rowWithCells],
-      };
+      // Return table ID for later use
+      return table.id;
     });
+
+    // Use our getVTable method to return the fully assembled table with the same structure
+    // as other methods for consistency
+    const assembledTable = await this.getVTable({ id: tableId });
+
+    // This should never happen since we just created the table
+    if (!assembledTable) {
+      throw new Error(`Failed to retrieve created table with ID ${tableId}`);
+    }
+
+    return assembledTable;
   }
 
   /**
@@ -133,6 +136,64 @@ class VTableService {
   }
 
   /**
+   * Assemble raw VTable data into a structured format for the frontend
+   * This method only handles data transformation, not database queries
+   */
+  private assembleVTable(fullData: VTableFullData): AssembledVTable | null {
+    const { table, columns, rowsWithCells } = fullData;
+
+    // If table doesn't exist, return null
+    if (!table) return null;
+
+    // Group data by row ID for easier processing
+    const rowsMap = new Map<
+      number,
+      {
+        id: number;
+        table_id: number;
+        created_at: Date;
+        cells: VTableCellData[];
+      }
+    >();
+
+    // Process all row/cell data to group by row
+    for (const item of rowsWithCells) {
+      const { row_id, table_id, cell_id, column_id, value, row_created_at } =
+        item;
+
+      // Initialize the row in our map if it doesn't exist yet
+      if (!rowsMap.has(row_id)) {
+        rowsMap.set(row_id, {
+          id: row_id,
+          table_id,
+          created_at: row_created_at,
+          cells: [],
+        });
+      }
+
+      // Add the cell to the row if it exists (left joins can result in null cells)
+      if (cell_id !== null && column_id !== null) {
+        rowsMap.get(row_id)!.cells.push({
+          id: cell_id,
+          row_id,
+          column_id,
+          value,
+        });
+      }
+    }
+
+    // Convert the map to an array of rows with cells
+    const rows = Array.from(rowsMap.values()) as VTableRowWithCells[];
+
+    // Return the fully assembled table structure
+    return {
+      table,
+      columns,
+      rows,
+    };
+  }
+
+  /**
    * Get a fully assembled VTable with all columns and rows with their cell values
    */
   public async getVTable(
@@ -142,57 +203,11 @@ class VTableService {
 
     this.logger.debug(`Getting assembled VTable with id: ${id}`);
 
-    // 1. Get the table
-    const table = await vTableRepository.getVTable({ id });
-    if (!table) {
-      return null;
-    }
+    // Use the repository to efficiently fetch all the raw data
+    const rawData = await vTableRepository.getFullVTable({ id });
 
-    // 2. Get all columns for the table
-    const columns = await vTableRepository.getVTableColumns({
-      tableId: table.id,
-    });
-
-    // 3. Get all rows for the table
-    const rows = await vTableRepository.getVRows({
-      tableId: table.id,
-    });
-
-    if (rows.length === 0) {
-      // Return empty table structure if no rows
-      return {
-        table,
-        columns,
-        rows: [],
-      };
-    }
-
-    // 4. Get all cells for the table
-    const cells = await vTableRepository.getVCells({ tableId: table.id });
-
-    // 5. Group cells by row for easy assignment
-    const cellsByRow: Record<number, VTableCellData[]> = {};
-    for (const cell of cells) {
-      const rowId = cell.row_id;
-      if (!cellsByRow[rowId]) {
-        cellsByRow[rowId] = [];
-      }
-      cellsByRow[rowId].push(cell as unknown as VTableCellData);
-    }
-
-    // 6. Assemble rows with their cells
-    const validRows = rows.filter((row) => row.id !== undefined);
-    const rowsWithCells = validRows.map((row) => ({
-      ...row,
-      cells: cellsByRow[row.id] || [],
-    }));
-
-    // 7. Return the fully assembled table
-    return {
-      table,
-      columns,
-      rows: rowsWithCells,
-    };
+    // Use the assembler method to structure the data for the frontend
+    return this.assembleVTable(rawData);
   }
 
   /**
@@ -227,7 +242,7 @@ class VTableService {
     }
 
     // 2. Get the associated table to return the full structure
-    return this.getVTable({ id: column.table_id });
+    return await this.getVTable({ id: column.table_id });
   }
 
   /**
@@ -252,7 +267,7 @@ class VTableService {
     await vTableRepository.deleteVTableColumn({ id });
 
     // 3. Return the updated table structure
-    return this.getVTable({ id: tableId });
+    return await this.getVTable({ id: tableId });
   }
 
   /**
@@ -301,8 +316,8 @@ class VTableService {
       await vTableRepository.bulkCreateVCells(cellInputs);
     }
 
-    // 4. Return the updated table
-    return this.getVTable({ id: tableId });
+    // 4. Return the updated table using our consistent method
+    return await this.getVTable({ id: tableId });
   }
 
   /**
@@ -327,7 +342,7 @@ class VTableService {
     await vTableRepository.deleteVRow({ id });
 
     // 3. Return the updated table
-    return this.getVTable({ id: tableId });
+    return await this.getVTable({ id: tableId });
   }
 
   /**
