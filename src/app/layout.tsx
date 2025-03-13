@@ -11,14 +11,26 @@ export const metadata: Metadata = {
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+type RootLayoutProps = {
+  children: React.ReactNode;
+};
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <LayoutWrapper>{children}</LayoutWrapper>
+        </TRPCReactProvider>
       </body>
     </html>
   );
 }
+
+const LayoutWrapper = ({ children }: Readonly<RootLayoutProps>) => {
+  return (
+    <div className="flex min-h-screen flex-col items-center">
+      <main className="w-full max-w-screen-lg">{children}</main>
+    </div>
+  );
+};
