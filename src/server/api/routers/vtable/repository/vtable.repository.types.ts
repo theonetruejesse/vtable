@@ -6,6 +6,8 @@ import {
 } from "~/server/database/db.types";
 import { Selectable } from "kysely";
 
+// TODO, clean up these files for organization
+
 export type CreateVTableInput = Pick<v_tables, "name" | "owner_id">;
 
 export type UpdateVTableInput = {

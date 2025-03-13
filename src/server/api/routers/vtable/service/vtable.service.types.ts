@@ -1,8 +1,8 @@
 import { v_column_type } from "~/server/database/db.types";
 import {
   VTableColumnObject,
-  VTableObject,
   VRowObject,
+  VTableObject,
 } from "../repository/vtable.repository.types";
 
 // these schemas can be optimized later to avoid data redundancy and ease of use; but this is fine for now
@@ -52,20 +52,12 @@ export type GetVTableServiceInput = {
 // Types for structuring and assembling VTable data
 
 /**
- * Cell data formatted for the frontend
+ * Simplified cell object for frontend consumption
+ * Contains only the essential cell data needed for display and updates
  */
-export type VTableCellData = {
+export type VTableCellObject = {
   id: number;
-  row_id: number;
-  column_id: number;
   value: string | null;
-};
-
-/**
- * Row with its associated cells
- */
-export type VTableRowWithCells = VRowObject & {
-  cells: VTableCellData[];
 };
 
 /**
@@ -74,7 +66,12 @@ export type VTableRowWithCells = VRowObject & {
 export type AssembledVTable = {
   table: VTableObject;
   columns: VTableColumnObject[];
-  rows: VTableRowWithCells[];
+  rows: VRowObject[];
+  /**
+   * Record of cells indexed by "rowId-columnId" string keys for efficient lookup
+   * Example: cells["1-2"] would give you the cell at row 1, column 2
+   */
+  cells: Record<string, VTableCellObject>;
 };
 
 // Default column definitions for table creation

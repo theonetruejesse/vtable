@@ -1,8 +1,15 @@
 import { api } from "~/trpc/server";
 
-export const VTable = async () => {
-  const table = await api.vtable.getTable({ id: 1 });
-  if (!table) return <div>No table found</div>;
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 
-  return <div>{table.table.name}</div>;
+export const VTable = async () => {
+  const vtable = await api.vtable.getTable({ id: 1 });
+  if (!vtable) return <div>No table found</div>;
+
+  return <div>{vtable.table.name}</div>;
 };

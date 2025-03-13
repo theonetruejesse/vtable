@@ -5,7 +5,10 @@ import {
   UpdateVCellByPositionInput,
   VTableObject,
   VCellObject,
+  VTableColumnObject,
+  VTableRowCellJoinResult,
   VTableFullData,
+  VRowObject,
 } from "../repository/vtable.repository.types";
 import { db } from "~/server/database/db";
 import { v_column_type } from "~/server/database/db.types";
@@ -20,8 +23,7 @@ import {
   UpdateVTableCellServiceInput,
   UpdateVTableColumnServiceInput,
   UpdateVTableServiceInput,
-  VTableCellData,
-  VTableRowWithCells,
+  VTableCellObject,
   DEFAULT_COLUMNS,
 } from "./vtable.service.types";
 
@@ -138,6 +140,8 @@ class VTableService {
   /**
    * Assemble raw VTable data into a structured format for the frontend
    * This method only handles data transformation, not database queries
+   *
+   * Cell keys are formatted as "rowId-columnId" for efficient lookup
    */
   private assembleVTable(fullData: VTableFullData): AssembledVTable | null {
     const { table, columns, rowsWithCells } = fullData;
@@ -145,51 +149,45 @@ class VTableService {
     // If table doesn't exist, return null
     if (!table) return null;
 
-    // Group data by row ID for easier processing
-    const rowsMap = new Map<
-      number,
-      {
-        id: number;
-        table_id: number;
-        created_at: Date;
-        cells: VTableCellData[];
-      }
-    >();
+    // Create a map to track unique rows
+    const rowsMap = new Map<number, VRowObject>();
 
-    // Process all row/cell data to group by row
+    // Create a cells record with "rowId-columnId" keys
+    const cells: Record<string, VTableCellObject> = {};
+
+    // Process all row/cell data
     for (const item of rowsWithCells) {
       const { row_id, table_id, cell_id, column_id, value, row_created_at } =
         item;
 
-      // Initialize the row in our map if it doesn't exist yet
+      // Track unique rows
       if (!rowsMap.has(row_id)) {
         rowsMap.set(row_id, {
           id: row_id,
           table_id,
           created_at: row_created_at,
-          cells: [],
         });
       }
 
-      // Add the cell to the row if it exists (left joins can result in null cells)
+      // Add cell to the cells record if it exists (left joins can result in null cells)
       if (cell_id !== null && column_id !== null) {
-        rowsMap.get(row_id)!.cells.push({
+        const cellKey = `${row_id}-${column_id}`;
+        cells[cellKey] = {
           id: cell_id,
-          row_id,
-          column_id,
           value,
-        });
+        };
       }
     }
 
-    // Convert the map to an array of rows with cells
-    const rows = Array.from(rowsMap.values()) as VTableRowWithCells[];
+    // Convert the rows map to an array
+    const rows = Array.from(rowsMap.values());
 
-    // Return the fully assembled table structure
+    // Return the fully assembled table structure in the new format
     return {
       table,
       columns,
       rows,
+      cells,
     };
   }
 
