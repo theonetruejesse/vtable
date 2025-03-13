@@ -29,8 +29,8 @@ export default function RootLayout({ children }: RootLayoutProps) {
 
 const LayoutWrapper = ({ children }: Readonly<RootLayoutProps>) => {
   return (
-    <div className="flex min-h-screen flex-col items-center">
-      <main className="w-full max-w-screen-lg">{children}</main>
+    <div className="flex min-h-screen flex-col">
+      <main className="mx-auto w-full max-w-screen-lg">{children}</main>
     </div>
   );
 };

@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.resizer {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 5px;
+  background: rgba(0, 0, 0, 0);
+  cursor: col-resize;
+  user-select: none;
+  touch-action: none;
+  opacity: 1;
+  z-index: 10;
+}
+
+.resizer:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.resizer.isResizing {
+  background: rgba(0, 0, 0, 0.8);
+  opacity: 1;
+}
+
+table {
+  @apply border-collapse;
+  table-layout: fixed;
+  width: auto !important;
+  position: relative;
+  max-width: 100%;
+  transform-origin: left top;
+}
+
+/* Container for the table */
+.overflow-x-auto {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  padding-bottom: 5px;
+}
+
+.table-left {
+  @apply table-fixed;
+  margin-left: 0 !important;
+  margin-right: auto !important;
+  float: left;
+  clear: both;
+}
+
+th,
+td {
+  @apply relative border border-gray-300 p-2;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background-color 0.1s ease;
+}
+
+th {
+  @apply bg-gray-100;
+  position: relative;
+  user-select: none;
+}
+
+/* Resizing column styling */
+.column-resizing {
+  @apply border-r-2 border-r-blue-500;
+  border-left-width: 1px !important;
+  border-left-color: rgb(209 213 219) !important;
+  background-color: rgba(219, 234, 254, 0.3) !important;
+}
+
+/* Remove resizing style from cells */
+td.column-resizing {
+  @apply border border-gray-300;
+  border-right-width: 1px !important;
+  background-color: rgba(219, 234, 254, 0.1) !important;
+}

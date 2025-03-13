@@ -9,7 +9,7 @@ import { api } from "~/trpc/react";
 import { type AssembledVTable, v_column_type } from "~/server/api/types";
 
 // Define a type for the table row data
-type VTableRowData = {
+export type VTableRowData = {
   id: number;
   [key: `col-${number}`]: string;
 };

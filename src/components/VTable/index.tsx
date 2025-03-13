@@ -1,17 +1,9 @@
 "use client";
 
 import { flexRender } from "@tanstack/react-table";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 import { useVTable } from "./hooks";
-import { Plus } from "lucide-react";
-import { Button } from "~/components/ui/button";
+import { VHeader } from "./_components/VHeader";
 
 export function VTable({ id }: { id: number }) {
   const { table, tableColumns, data } = useVTable(id);
@@ -25,36 +17,7 @@ export function VTable({ id }: { id: number }) {
       </div>
       <div className="relative w-full min-w-[800px]">
         <Table className="table-fixed border-collapse">
-          <TableHeader className="border-none">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="border-none">
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="w-[150px] border-none px-4 py-2 text-left font-medium transition-colors hover:bg-muted"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-                <TableHead className="w-[50px] border-none">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    title="Add column"
-                    aria-label="Add column"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-              </TableRow>
-            ))}
-          </TableHeader>
+          <VHeader table={table} />
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
