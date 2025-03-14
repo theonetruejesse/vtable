@@ -70,8 +70,15 @@ export function DragTable() {
     return table.getTotalSize();
   }, [table]);
 
-  // Get access to the debug info from the drag header
-  const { debugResize } = useDragHeader(table);
+  // Use a single instance of the drag header hook for the entire component
+  const { handleResizeStart, debugResize } = useDragHeader(table);
+
+  // Log debug information to validate updates are happening
+  React.useEffect(() => {
+    if (debugResize.phase !== "idle") {
+      console.log("Debug update:", debugResize);
+    }
+  }, [debugResize]);
 
   return (
     <div className="w-full p-8">
@@ -83,8 +90,8 @@ export function DragTable() {
           style={{ minWidth: `${totalTableWidth}px` }}
           wrapperClassName="scrollbar-thin overflow-y-hidden"
         >
-          {/* Use the DragHeader component */}
-          <DragHeader table={table} />
+          {/* Pass the resize handler to maintain single source of truth */}
+          <DragHeader table={table} onResize={handleResizeStart} />
           <TableBody>
             {table.getRowModel().rows.map((row) => (
               <TableRow key={row.id}>
@@ -115,10 +122,7 @@ export function DragTable() {
       </div>
 
       {/* Use the ResizeDebugger component */}
-      <ResizeDebugger
-        debugInfo={debugResize}
-        totalTableWidth={totalTableWidth}
-      />
+      <ResizeDebugger debugInfo={debugResize} />
     </div>
   );
 }

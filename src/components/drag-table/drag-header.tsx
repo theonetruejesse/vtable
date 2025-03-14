@@ -11,7 +11,7 @@ type ColumnResizingInfo = {
 };
 
 // Type for debug state
-type DebugResizeInfo = {
+export type DebugResizeInfo = {
   phase: "idle" | "start" | "move" | "end";
   targetColumn: string | null;
   oldWidth: number;
@@ -186,10 +186,14 @@ export function useDragHeader<T>(table: Table<T>) {
 // DragHeader Component
 type DragHeaderProps<T> = {
   table: Table<T>;
+  onResize?: (header: Header<T, unknown>) => (e: any) => void;
 };
 
-export function DragHeader<T>({ table }: DragHeaderProps<T>) {
-  const { handleResizeStart, debugResize } = useDragHeader(table);
+export function DragHeader<T>({ table, onResize }: DragHeaderProps<T>) {
+  // If onResize is provided, use it, otherwise use the local hook
+  const { handleResizeStart } = onResize
+    ? { handleResizeStart: onResize }
+    : useDragHeader(table);
 
   return (
     <TableHeader>
@@ -242,10 +246,9 @@ export function DragHeader<T>({ table }: DragHeaderProps<T>) {
 // Debugger Component
 type DebuggerProps = {
   debugInfo: DebugResizeInfo;
-  totalTableWidth: number;
 };
 
-export function ResizeDebugger({ debugInfo, totalTableWidth }: DebuggerProps) {
+export function ResizeDebugger({ debugInfo }: DebuggerProps) {
   if (process.env.NODE_ENV !== "development") return null;
 
   return (
@@ -254,7 +257,6 @@ export function ResizeDebugger({ debugInfo, totalTableWidth }: DebuggerProps) {
       <div>Target Column: {debugInfo.targetColumn || "none"}</div>
       <div>Old Width: {debugInfo.oldWidth}</div>
       <div>New Width: {debugInfo.newWidth}</div>
-      <div>Total Table Width: {totalTableWidth}px</div>
     </div>
   );
 }
