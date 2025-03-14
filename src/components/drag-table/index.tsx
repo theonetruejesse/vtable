@@ -7,7 +7,8 @@ import {
   ColumnDef,
   flexRender,
 } from "@tanstack/react-table";
-import "./index.css";
+import { cn } from "~/lib/utils";
+
 type Person = {
   firstName: string;
   lastName: string;
@@ -53,12 +54,28 @@ export function DragTable() {
     ...defaultColumns,
   ]);
 
+  // Add debug state to track resize operations
+  const [debugResize, setDebugResize] = React.useState<{
+    phase: "idle" | "start" | "move" | "end";
+    targetColumn: string | null;
+    oldWidth: number;
+    newWidth: number;
+  }>({
+    phase: "idle",
+    targetColumn: null,
+    oldWidth: 0,
+    newWidth: 0,
+  });
+
   const table = useReactTable({
     data,
     columns,
-    columnResizeMode: "onEnd",
+    // Change to onChange to allow real-time updates during dragging
+    columnResizeMode: "onChange",
     getCoreRowModel: getCoreRowModel(),
     debugTable: true,
+    // Set column sizes to be independent
+    debugAll: process.env.NODE_ENV === "development",
   });
 
   const [columnResizingInfo, setColumnResizingInfo] = React.useState<{
@@ -81,12 +98,20 @@ export function DragTable() {
         deltaOffset: 0,
         startWidth: header.getSize(),
       });
+
+      setDebugResize({
+        phase: "start",
+        targetColumn: header.column.id,
+        oldWidth: header.getSize(),
+        newWidth: header.getSize(),
+      });
+
       originalHandler(e);
     };
   }, []);
 
   const handleResizeMove = React.useCallback(
-    (e: MouseEvent) => {
+    (e: PointerEvent) => {
       if (columnResizingInfo.columnId) {
         const header = table
           .getHeaderGroups()
@@ -110,11 +135,24 @@ export function DragTable() {
               ...prev,
               deltaOffset: newWidth - prev.startWidth,
             }));
+
+            setDebugResize({
+              phase: "move",
+              targetColumn: header.column.id,
+              oldWidth: columnResizingInfo.startWidth,
+              newWidth: newWidth,
+            });
+
+            // Apply the width change immediately only to the target column
+            table.setColumnSizing((prev) => ({
+              ...prev,
+              [header.column.id]: newWidth,
+            }));
           }
         }
       }
     },
-    [columnResizingInfo.columnId, table],
+    [columnResizingInfo.columnId, columnResizingInfo.startWidth, table],
   );
 
   // Apply the resize when finished
@@ -122,12 +160,21 @@ export function DragTable() {
     if (columnResizingInfo.columnId) {
       const column = table.getColumn(columnResizingInfo.columnId);
       if (column) {
-        // Apply the final size to the column using the table's column sizing method
+        const finalWidth =
+          columnResizingInfo.startWidth + columnResizingInfo.deltaOffset;
+
+        // Apply the final size to just the column being resized
         table.setColumnSizing((prev) => ({
           ...prev,
-          [column.id]:
-            columnResizingInfo.startWidth + columnResizingInfo.deltaOffset,
+          [column.id]: finalWidth,
         }));
+
+        setDebugResize({
+          phase: "end",
+          targetColumn: column.id,
+          oldWidth: columnResizingInfo.startWidth,
+          newWidth: finalWidth,
+        });
       }
     }
 
@@ -137,45 +184,77 @@ export function DragTable() {
       deltaOffset: 0,
       startWidth: 0,
     });
+
+    // Force the table to exit resize mode directly
+    if (table.getState().columnSizingInfo.isResizingColumn) {
+      table.setColumnSizingInfo({
+        startOffset: null,
+        startSize: null,
+        deltaOffset: null,
+        deltaPercentage: null,
+        isResizingColumn: false,
+        columnSizingStart: [],
+      });
+    }
   }, [columnResizingInfo, table]);
 
-  // Handle resize events
+  // Handle resize events - now placed after handleResizeEnd declaration
   React.useEffect(() => {
-    document.addEventListener("mousemove", handleResizeMove);
-    document.addEventListener("mouseup", handleResizeEnd);
+    // Log attachment of event listeners
+
+    // Use capture phase to ensure we catch all events
+    const handlePointerMoveCapture = (e: PointerEvent) => {
+      handleResizeMove(e);
+    };
+
+    const handlePointerUpCapture = (e: PointerEvent) => {
+      if (columnResizingInfo.columnId !== null) {
+        // Force end of resize regardless of where the pointer was released
+        handleResizeEnd();
+        // Prevent any further events in this sequence
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    // Add listeners with capture phase to ensure they catch all events
+    document.addEventListener("pointermove", handlePointerMoveCapture, true);
+    document.addEventListener("pointerup", handlePointerUpCapture, true);
 
     return () => {
-      document.removeEventListener("mousemove", handleResizeMove);
-      document.removeEventListener("mouseup", handleResizeEnd);
+      document.removeEventListener(
+        "pointermove",
+        handlePointerMoveCapture,
+        true,
+      );
+      document.removeEventListener("pointerup", handlePointerUpCapture, true);
     };
-  }, [handleResizeMove, handleResizeEnd]);
+  }, [handleResizeMove, handleResizeEnd, columnResizingInfo.columnId]);
 
   return (
     <div className="w-full p-8">
-      <div className="w-full overflow-x-auto">
+      {/* Table container with overflow handling */}
+      <div className="scrollbar-thin w-full overflow-x-auto overflow-y-hidden pb-5">
         <table
-          className="table-left"
+          className="float-left clear-both ml-0 mr-auto w-auto table-fixed border-collapse"
           style={{ minWidth: `${table.getTotalSize()}px` }}
         >
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
-                  // Calculate the displayed width for this header
-                  const displayWidth =
-                    header.getSize() +
-                    (columnResizingInfo.columnId === header.column.id
-                      ? columnResizingInfo.deltaOffset
-                      : 0);
-
                   return (
                     <th
                       key={header.id}
                       data-column-id={header.column.id}
-                      style={{ width: `${displayWidth}px` }}
-                      className={
-                        header.column.getIsResizing() ? "column-resizing" : ""
-                      }
+                      style={{
+                        width: `${header.getSize()}px`,
+                      }}
+                      className={cn(
+                        "relative select-none border border-gray-300 bg-gray-100 p-2 text-left",
+                        header.column.getIsResizing() &&
+                          "border-l border-r-2 border-l-gray-300 border-r-gray-300 bg-gray-100",
+                      )}
                     >
                       {header.isPlaceholder
                         ? null
@@ -185,11 +264,16 @@ export function DragTable() {
                           )}
                       <div
                         onDoubleClick={() => header.column.resetSize()}
-                        onMouseDown={handleResizeStart(header)}
-                        onTouchStart={handleResizeStart(header)}
-                        className={`resizer ${
-                          header.column.getIsResizing() ? "isResizing" : ""
-                        }`}
+                        onPointerDown={handleResizeStart(header)}
+                        className={cn(
+                          "absolute right-0 top-0 z-10 h-full w-[5px] cursor-col-resize touch-none select-none bg-transparent opacity-100",
+                          header.column.getIsResizing()
+                            ? "bg-blue-500"
+                            : "hover:bg-blue-500",
+                        )}
+                        style={{
+                          transform: "translateX(50%)",
+                        }}
                       />
                     </th>
                   );
@@ -201,20 +285,15 @@ export function DragTable() {
             {table.getRowModel().rows.map((row) => (
               <tr key={row.id}>
                 {row.getVisibleCells().map((cell) => {
-                  // Calculate the displayed width for this cell
-                  const displayWidth =
-                    cell.column.getSize() +
-                    (columnResizingInfo.columnId === cell.column.id
-                      ? columnResizingInfo.deltaOffset
-                      : 0);
-
                   return (
                     <td
                       key={cell.id}
-                      style={{ width: `${displayWidth}px` }}
-                      className={
-                        cell.column.getIsResizing() ? "column-resizing" : ""
-                      }
+                      style={{
+                        width: `${cell.column.getSize()}px`,
+                      }}
+                      className={cn(
+                        "relative box-border overflow-hidden text-ellipsis whitespace-nowrap border border-gray-300 p-2 text-left transition-colors duration-100",
+                      )}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -228,6 +307,16 @@ export function DragTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Debug info display */}
+      {process.env.NODE_ENV === "development" && (
+        <div className="mt-4 border border-gray-300 p-4 text-xs">
+          <div>Resize Phase: {debugResize.phase}</div>
+          <div>Target Column: {debugResize.targetColumn || "none"}</div>
+          <div>Old Width: {debugResize.oldWidth}</div>
+          <div>New Width: {debugResize.newWidth}</div>
+        </div>
+      )}
     </div>
   );
 }
