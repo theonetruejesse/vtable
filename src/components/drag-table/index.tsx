@@ -8,6 +8,14 @@ import {
   flexRender,
 } from "@tanstack/react-table";
 import { cn } from "~/lib/utils";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHead,
+  TableRow,
+} from "~/components/ui/table";
 
 type Person = {
   firstName: string;
@@ -70,11 +78,9 @@ export function DragTable() {
   const table = useReactTable({
     data,
     columns,
-    // Change to onChange to allow real-time updates during dragging
     columnResizeMode: "onChange",
     getCoreRowModel: getCoreRowModel(),
     debugTable: true,
-    // Set column sizes to be independent
     debugAll: process.env.NODE_ENV === "development",
   });
 
@@ -120,7 +126,7 @@ export function DragTable() {
 
         if (header) {
           const headerEl = document.querySelector(
-            `th[data-column-id="${header.column.id}"]`,
+            `[data-column-id="${header.column.id}"]`,
           );
           if (headerEl) {
             const headerRect = headerEl.getBoundingClientRect();
@@ -200,8 +206,6 @@ export function DragTable() {
 
   // Handle resize events - now placed after handleResizeEnd declaration
   React.useEffect(() => {
-    // Log attachment of event listeners
-
     // Use capture phase to ensure we catch all events
     const handlePointerMoveCapture = (e: PointerEvent) => {
       handleResizeMove(e);
@@ -231,81 +235,92 @@ export function DragTable() {
     };
   }, [handleResizeMove, handleResizeEnd, columnResizingInfo.columnId]);
 
+  // Calculate the total width of all columns
+  const totalTableWidth = React.useMemo(() => {
+    return table.getTotalSize();
+  }, [table]);
+
   return (
     <div className="w-full p-8">
-      {/* Table container with overflow handling */}
+      {/* Custom table wrapper to override the default w-full from Table component */}
       <div className="scrollbar-thin w-full overflow-x-auto overflow-y-hidden pb-5">
-        <table
-          className="float-left clear-both ml-0 mr-auto w-auto table-fixed border-collapse"
-          style={{ minWidth: `${table.getTotalSize()}px` }}
+        <div
+          className="w-auto"
+          style={{ display: "inline-block", minWidth: `${totalTableWidth}px` }}
         >
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <th
-                      key={header.id}
-                      data-column-id={header.column.id}
-                      style={{
-                        width: `${header.getSize()}px`,
-                      }}
-                      className={cn(
-                        "relative select-none border border-gray-300 bg-gray-100 p-2 text-left",
-                        header.column.getIsResizing() &&
-                          "border-l border-r-2 border-l-gray-300 border-r-gray-300 bg-gray-100",
-                      )}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
-                      <div
-                        onDoubleClick={() => header.column.resetSize()}
-                        onPointerDown={handleResizeStart(header)}
-                        className={cn(
-                          "absolute right-0 top-0 z-10 h-full w-[5px] cursor-col-resize touch-none select-none bg-transparent opacity-100",
-                          header.column.getIsResizing()
-                            ? "bg-blue-500"
-                            : "hover:bg-blue-500",
-                        )}
+          <Table className="w-auto table-fixed border-collapse">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead
+                        key={header.id}
+                        data-column-id={header.column.id}
                         style={{
-                          transform: "translateX(50%)",
+                          width: `${header.getSize()}px`,
+                          minWidth: `${header.getSize()}px`,
+                          maxWidth: `${header.getSize()}px`,
                         }}
-                      />
-                    </th>
-                  );
-                })}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => {
-                  return (
-                    <td
-                      key={cell.id}
-                      style={{
-                        width: `${cell.column.getSize()}px`,
-                      }}
-                      className={cn(
-                        "relative box-border overflow-hidden text-ellipsis whitespace-nowrap border border-gray-300 p-2 text-left transition-colors duration-100",
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                        className={cn(
+                          "relative select-none border border-gray-300 bg-gray-100 text-left",
+                          header.column.getIsResizing() &&
+                            "border-l border-r-2 border-l-gray-300 border-r-gray-300 bg-gray-100",
+                        )}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                        <div
+                          onDoubleClick={() => header.column.resetSize()}
+                          onPointerDown={handleResizeStart(header)}
+                          className={cn(
+                            "absolute right-0 top-0 z-10 h-full w-[5px] cursor-col-resize touch-none select-none bg-transparent opacity-100",
+                            header.column.getIsResizing()
+                              ? "bg-blue-500"
+                              : "hover:bg-blue-500",
+                          )}
+                          style={{
+                            transform: "translateX(50%)",
+                          }}
+                        />
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => {
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        style={{
+                          width: `${cell.column.getSize()}px`,
+                          minWidth: `${cell.column.getSize()}px`,
+                          maxWidth: `${cell.column.getSize()}px`,
+                        }}
+                        className={cn(
+                          "relative box-border overflow-hidden text-ellipsis whitespace-nowrap border border-gray-300 text-left",
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Debug info display */}
@@ -315,6 +330,7 @@ export function DragTable() {
           <div>Target Column: {debugResize.targetColumn || "none"}</div>
           <div>Old Width: {debugResize.oldWidth}</div>
           <div>New Width: {debugResize.newWidth}</div>
+          <div>Total Table Width: {totalTableWidth}px</div>
         </div>
       )}
     </div>
