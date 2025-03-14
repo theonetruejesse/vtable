@@ -1,20 +1,40 @@
 "use client";
 
-import { flexRender } from "@tanstack/react-table";
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
-import { useVTable } from "./hooks";
+
 import { VHeader } from "./_components/VHeader";
+import { useVTableQuery } from "./query-hook";
 
 export function VTable({ id }: { id: number }) {
-  const { table, tableColumns, data } = useVTable(id);
+  const { tableInfo, tableData, tableColumns, isLoading, error } =
+    useVTableQuery(id);
 
-  if (!data) return null;
+  const table = useReactTable({
+    data: tableData,
+    columns: tableColumns,
+    columnResizeMode: "onChange",
+    getCoreRowModel: getCoreRowModel(),
+    debugTable: true,
+    debugAll: process.env.NODE_ENV === "development",
+  });
+
+  if (!table) return null;
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <div className="w-full overflow-auto">
-      <div className="my-4 flex items-center justify-center">
-        <h1 className="text-2xl font-bold">{data.table.name}</h1>
-      </div>
+      {tableInfo && (
+        <div className="my-4 flex items-center justify-center">
+          <h1 className="text-2xl font-bold">{tableInfo.name}</h1>
+        </div>
+      )}
       <div className="relative w-full min-w-[800px]">
         <Table className="table-fixed border-collapse">
           <VHeader table={table} />

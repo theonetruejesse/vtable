@@ -2,11 +2,10 @@ import { flexRender } from "@tanstack/react-table";
 import { Button } from "~/components/ui/button";
 import { TableHeader, TableRow, TableHead } from "~/components/ui/table";
 import { Plus } from "lucide-react";
-import { type Table } from "@tanstack/react-table";
-import { type VTableRowData } from "~/components/VTable/hooks";
+import { type VTable } from "../vtable.types";
 
 type VHeaderProps = {
-  table: Table<VTableRowData>;
+  table: VTable;
 };
 
 export const VHeader = ({ table }: VHeaderProps) => {

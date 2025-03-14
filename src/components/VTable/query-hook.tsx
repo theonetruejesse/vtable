@@ -1,37 +1,21 @@
 import { useMemo } from "react";
-import {
-  getCoreRowModel,
-  useReactTable,
-  type ColumnDef,
-} from "@tanstack/react-table";
+import { type ColumnDef } from "@tanstack/react-table";
 import { DateTime } from "luxon";
 import { api } from "~/trpc/react";
 import { type AssembledVTable, v_column_type } from "~/server/api/types";
-
-// Define a type for the table row data
-export type VTableRowData = {
-  id: number;
-  [key: `col-${number}`]: string;
-};
+import { VTableRowData } from "./vtable.types";
 
 // Custom hook to create and configure the table
-export const useVTable = (id: number) => {
-  const { data, error, isLoading } = useVTableData(id);
-  const { tableData, tableColumns } = useVTableTransform(data);
-
-  // Initialize TanStack Table with proper types
-  const table = useReactTable<VTableRowData>({
-    data: tableData,
-    columns: tableColumns,
-    getCoreRowModel: getCoreRowModel(),
+export const useVTableQuery = (id: number) => {
+  const [data, { isLoading, error }] = api.vtable.getTable.useSuspenseQuery({
+    id,
   });
+  const transformedData = useVTableTransform(data);
 
   return {
-    table,
-    tableColumns,
+    ...transformedData,
     isLoading,
     error,
-    data,
   };
 };
 
@@ -75,7 +59,9 @@ const useVTableTransform = (data: AssembledVTable | null | undefined) => {
     }));
   }, [data]);
 
-  return { tableData, tableColumns };
+  const tableInfo = data?.table;
+
+  return { tableData, tableColumns, tableInfo };
 };
 
 // Cell renderer based on column type
