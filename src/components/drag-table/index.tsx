@@ -7,7 +7,6 @@ import {
   ColumnDef,
   flexRender,
 } from "@tanstack/react-table";
-import { cn } from "~/lib/utils";
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 import { DragHeader, ResizeDebugger, useDragHeader } from "./drag-header";
 
@@ -59,10 +58,15 @@ export function DragTable() {
   const table = useReactTable({
     data,
     columns,
-    columnResizeMode: "onChange",
     getCoreRowModel: getCoreRowModel(),
     debugTable: true,
     debugAll: process.env.NODE_ENV === "development",
+    columnResizeMode: "onChange",
+    defaultColumn: {
+      size: 200,
+      minSize: 50,
+      maxSize: 500,
+    },
   });
 
   // Calculate the total width of all columns
@@ -72,13 +76,6 @@ export function DragTable() {
 
   // Use a single instance of the drag header hook for the entire component
   const { handleResizeStart, debugResize } = useDragHeader(table);
-
-  // Log debug information to validate updates are happening
-  React.useEffect(() => {
-    if (debugResize.phase !== "idle") {
-      console.log("Debug update:", debugResize);
-    }
-  }, [debugResize]);
 
   return (
     <div className="w-full p-8">
@@ -99,14 +96,9 @@ export function DragTable() {
                   return (
                     <TableCell
                       key={cell.id}
-                      style={{
-                        width: `${cell.column.getSize()}px`,
-                        minWidth: `${cell.column.getSize()}px`,
-                        maxWidth: `${cell.column.getSize()}px`,
-                      }}
-                      className={cn(
-                        "relative box-border overflow-hidden text-ellipsis whitespace-nowrap border border-gray-300 text-left",
-                      )}
+                      className={
+                        "relative box-border overflow-hidden text-ellipsis whitespace-nowrap border border-gray-300 text-left"
+                      }
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
