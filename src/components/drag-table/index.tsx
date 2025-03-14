@@ -64,8 +64,7 @@ export function DragTable() {
     columnResizeMode: "onChange",
     defaultColumn: {
       size: 200,
-      minSize: 50,
-      maxSize: 500,
+      minSize: 120,
     },
   });
 
@@ -85,7 +84,7 @@ export function DragTable() {
           layout="fixed"
           borderStyle="collapse"
           style={{ minWidth: `${totalTableWidth}px` }}
-          wrapperClassName="scrollbar-thin overflow-y-hidden"
+          wrapperClassName="scrollbar-thin overflow-y-hidden w-full"
         >
           {/* Pass the resize handler to maintain single source of truth */}
           <DragHeader table={table} onResize={handleResizeStart} />

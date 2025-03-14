@@ -3,6 +3,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "~/lib/utils";
 
+// TODO, revisit this and clean it up completely
+
 const tableVariants = cva("caption-bottom text-sm", {
   variants: {
     layout: {

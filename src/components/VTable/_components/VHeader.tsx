@@ -12,7 +12,7 @@ export const VHeader = ({ table }: VHeaderProps) => {
   return (
     <TableHeader className="border-none">
       {table.getHeaderGroups().map((headerGroup) => (
-        <TableRow key={headerGroup.id} className="border-none">
+        <TableRow key={headerGroup.id}>
           {headerGroup.headers.map((header) => (
             <TableHead
               key={header.id}
@@ -26,7 +26,7 @@ export const VHeader = ({ table }: VHeaderProps) => {
                   )}
             </TableHead>
           ))}
-          <TableHead className="w-[50px] border-none">
+          <TableHead className="w-full border-l">
             <Button
               variant="ghost"
               size="icon"

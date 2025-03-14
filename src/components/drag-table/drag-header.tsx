@@ -2,6 +2,8 @@ import React from "react";
 import { flexRender, type Table, type Header } from "@tanstack/react-table";
 import { cn } from "~/lib/utils";
 import { TableHeader, TableRow, TableHead } from "~/components/ui/table";
+import { Button } from "../ui/button";
+import { Plus } from "lucide-react";
 
 // Type for our resize info
 type ColumnResizingInfo = {
@@ -76,7 +78,7 @@ export function useDragHeader<T>(table: Table<T>) {
             const mouseX = e.clientX;
 
             // Calculate the new width directly from the mouse position
-            const newWidth = Math.max(mouseX - startX, 50); // Minimum width of 50px
+            const newWidth = Math.max(mouseX - startX, 120); // Minimum width of 120px
 
             // Update the delta offset based on the new width
             setColumnResizingInfo((prev) => ({
@@ -196,7 +198,7 @@ export function DragHeader<T>({ table, onResize }: DragHeaderProps<T>) {
     : useDragHeader(table);
 
   return (
-    <TableHeader>
+    <TableHeader className="border-l border-none">
       {table.getHeaderGroups().map((headerGroup) => (
         <TableRow key={headerGroup.id}>
           {headerGroup.headers.map((header) => {
@@ -237,6 +239,17 @@ export function DragHeader<T>({ table, onResize }: DragHeaderProps<T>) {
               </TableHead>
             );
           })}
+          <TableHead className="w-full border-l">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Add column"
+              aria-label="Add column"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </TableHead>
         </TableRow>
       ))}
     </TableHeader>

@@ -36,7 +36,7 @@ export function VTable({ id }: { id: number }) {
         </div>
       )}
       <div className="relative w-full min-w-[800px]">
-        <Table className="table-fixed border-collapse">
+        <Table className="w-full table-fixed border-collapse">
           <VHeader table={table} />
           <TableBody>
             {table.getRowModel().rows?.length ? (
@@ -57,7 +57,7 @@ export function VTable({ id }: { id: number }) {
                       )}
                     </TableCell>
                   ))}
-                  <TableCell className="w-[50px]"></TableCell>
+                  <TableCell className="w-full"></TableCell>
                 </TableRow>
               ))
             ) : (
