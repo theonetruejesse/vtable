@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -7,20 +8,36 @@ import {
 } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 
-import { VHeader } from "./_components/VHeader";
+import { VColumns } from "./_components/VColumns";
 import { useVTableQuery } from "./query-hook";
+import {
+  ResizeDebugger,
+  type DebugResizeInfo,
+} from "./_components/VColumns/resize-hook";
 
 export function VTable({ id }: { id: number }) {
   const { tableInfo, tableData, tableColumns, isLoading, error } =
     useVTableQuery(id);
 
+  // State to store resize debug info from VColumns
+  const [debugInfo, setDebugInfo] = React.useState<DebugResizeInfo>({
+    phase: "idle",
+    targetColumn: null,
+    oldWidth: 0,
+    newWidth: 0,
+  });
+
   const table = useReactTable({
     data: tableData,
     columns: tableColumns,
-    columnResizeMode: "onChange",
     getCoreRowModel: getCoreRowModel(),
     debugTable: true,
     debugAll: process.env.NODE_ENV === "development",
+    columnResizeMode: "onChange",
+    defaultColumn: {
+      size: 200,
+      minSize: 120,
+    },
   });
 
   if (!table) return null;
@@ -36,8 +53,14 @@ export function VTable({ id }: { id: number }) {
         </div>
       )}
       <div className="relative w-full min-w-[800px]">
-        <Table className="w-full table-fixed border-collapse">
-          <VHeader table={table} />
+        <Table
+          className="w-full table-fixed border-collapse"
+          style={{
+            width:
+              table.getTotalSize() > 800 ? `${table.getTotalSize()}px` : "100%",
+          }}
+        >
+          <VColumns table={table} onDebugUpdate={setDebugInfo} />
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
@@ -50,6 +73,11 @@ export function VTable({ id }: { id: number }) {
                     <TableCell
                       key={cell.id}
                       className="truncate border-r border-gray-200 px-4 py-2 text-left last:border-r-0"
+                      style={{
+                        width: `${cell.column.getSize()}px`,
+                        minWidth: `${cell.column.getSize()}px`,
+                        maxWidth: `${cell.column.getSize()}px`,
+                      }}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -73,6 +101,11 @@ export function VTable({ id }: { id: number }) {
           </TableBody>
         </Table>
       </div>
+
+      {/* Render the resize debugger if in development mode */}
+      {process.env.NODE_ENV === "development" && (
+        <ResizeDebugger debugInfo={debugInfo} />
+      )}
     </div>
   );
 }

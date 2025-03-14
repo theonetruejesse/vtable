@@ -2,7 +2,7 @@ import { flexRender } from "@tanstack/react-table";
 import { Button } from "~/components/ui/button";
 import { TableHeader, TableRow, TableHead } from "~/components/ui/table";
 import { Plus } from "lucide-react";
-import { type VTable } from "../vtable.types";
+import { type VTable } from "../vtable-types";
 
 type VHeaderProps = {
   table: VTable;

@@ -3,30 +3,20 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DateTime } from "luxon";
 import { api } from "~/trpc/react";
 import { type AssembledVTable, v_column_type } from "~/server/api/types";
-import { VTableRowData } from "./vtable.types";
+import { VTableRowData } from "./vtable-types";
 
 // Custom hook to create and configure the table
 export const useVTableQuery = (id: number) => {
-  const [data, { isLoading, error }] = api.vtable.getTable.useSuspenseQuery({
-    id,
-  });
+  const [data, query] = api.vtable.getTable.useSuspenseQuery({ id });
   const transformedData = useVTableTransform(data);
 
   return {
     ...transformedData,
-    isLoading,
-    error,
+    isLoading: query.isLoading,
+    error: query.error,
   };
 };
 
-const useVTableData = (id: number) => {
-  const [data, { error, isLoading }] = api.vtable.getTable.useSuspenseQuery({
-    id,
-  });
-  return { data, error, isLoading };
-};
-
-// Custom hook to transform table data and create columns
 const useVTableTransform = (data: AssembledVTable | null | undefined) => {
   // Transform the data into a format that TanStack Table can use
   const tableData = useMemo<VTableRowData[]>(() => {

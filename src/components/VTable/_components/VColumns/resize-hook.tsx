@@ -1,9 +1,5 @@
 import React from "react";
-import { flexRender, type Table, type Header } from "@tanstack/react-table";
-import { cn } from "~/lib/utils";
-import { TableHeader, TableRow, TableHead } from "~/components/ui/table";
-import { Button } from "../ui/button";
-import { Plus } from "lucide-react";
+import { type Table, type Header } from "@tanstack/react-table";
 
 // Type for our resize info
 type ColumnResizingInfo = {
@@ -21,7 +17,7 @@ export type DebugResizeInfo = {
 };
 
 // Hook to handle drag and resize logic
-export function useDragHeader<T>(table: Table<T>) {
+export function useColumnResize<T>(table: Table<T>) {
   // Debug state
   const [debugResize, setDebugResize] = React.useState<DebugResizeInfo>({
     phase: "idle",
@@ -183,77 +179,6 @@ export function useDragHeader<T>(table: Table<T>) {
     handleResizeStart,
     debugResize,
   };
-}
-
-// DragHeader Component
-type DragHeaderProps<T> = {
-  table: Table<T>;
-  onResize?: (header: Header<T, unknown>) => (e: any) => void;
-};
-
-export function DragHeader<T>({ table, onResize }: DragHeaderProps<T>) {
-  // If onResize is provided, use it, otherwise use the local hook
-  const { handleResizeStart } = onResize
-    ? { handleResizeStart: onResize }
-    : useDragHeader(table);
-
-  return (
-    <TableHeader className="border-l border-none">
-      {table.getHeaderGroups().map((headerGroup) => (
-        <TableRow key={headerGroup.id}>
-          {headerGroup.headers.map((header) => {
-            return (
-              <TableHead
-                key={header.id}
-                data-column-id={header.column.id}
-                style={{
-                  width: `${header.getSize()}px`,
-                  minWidth: `${header.getSize()}px`,
-                  maxWidth: `${header.getSize()}px`,
-                }}
-                className={cn(
-                  "relative select-none border border-gray-300 bg-gray-100 text-left",
-                  header.column.getIsResizing() &&
-                    "border-l border-r-2 border-l-gray-300 border-r-gray-300 bg-gray-100",
-                )}
-              >
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(
-                      header.column.columnDef.header,
-                      header.getContext(),
-                    )}
-                <div
-                  onDoubleClick={() => header.column.resetSize()}
-                  onPointerDown={handleResizeStart(header)}
-                  className={cn(
-                    "absolute right-0 top-0 z-10 h-full w-[5px] cursor-col-resize touch-none select-none bg-transparent opacity-100",
-                    header.column.getIsResizing()
-                      ? "bg-blue-500"
-                      : "hover:bg-blue-500",
-                  )}
-                  style={{
-                    transform: "translateX(50%)",
-                  }}
-                />
-              </TableHead>
-            );
-          })}
-          <TableHead className="w-full border-l">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Add column"
-              aria-label="Add column"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </TableHead>
-        </TableRow>
-      ))}
-    </TableHeader>
-  );
 }
 
 // Debugger Component
