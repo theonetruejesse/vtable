@@ -8,9 +8,7 @@ export default async function Home() {
     <HydrateClient>
       <div className="flex w-full flex-col items-start justify-start">
         {/* TODO, switch this to page based */}
-        <Suspense fallback={<div>Loading...</div>}>
-          <VTable id={1} />
-        </Suspense>
+        <VTable id={1} />
       </div>
     </HydrateClient>
   );

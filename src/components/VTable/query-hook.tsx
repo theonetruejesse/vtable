@@ -7,12 +7,13 @@ import { VTableRowData } from "./vtable-types";
 
 // Custom hook to create and configure the table
 export const useVTableQuery = (id: number) => {
+  // Use Suspense-compatible query that will throw a promise
+  // when loading and be caught by React Suspense
   const [data, query] = api.vtable.getTable.useSuspenseQuery({ id });
   const transformedData = useVTableTransform(data);
 
   return {
     ...transformedData,
-    isLoading: query.isLoading,
     error: query.error,
   };
 };

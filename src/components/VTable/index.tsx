@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -14,10 +14,22 @@ import {
   ResizeDebugger,
   type DebugResizeInfo,
 } from "./_components/VColumns/resize-hook";
+import { VTableSkeleton } from "./vtable-skeleton";
 
+// Main VTable component that wraps the content with Suspense
 export function VTable({ id }: { id: number }) {
-  const { tableInfo, tableData, tableColumns, isLoading, error } =
-    useVTableQuery(id);
+  // We can't know the exact number of columns/rows before loading
+  // so we use reasonable defaults that match common table structures
+  return (
+    <Suspense fallback={<VTableSkeleton />}>
+      <VTableContent id={id} />
+    </Suspense>
+  );
+}
+
+// Component that handles the data fetching and rendering
+function VTableContent({ id }: { id: number }) {
+  const { tableInfo, tableData, tableColumns, error } = useVTableQuery(id);
 
   // State to store resize debug info from VColumns
   const [debugInfo, setDebugInfo] = React.useState<DebugResizeInfo>({
@@ -41,8 +53,6 @@ export function VTable({ id }: { id: number }) {
   });
 
   if (!table) return null;
-
-  if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
 
   return (
@@ -53,13 +63,7 @@ export function VTable({ id }: { id: number }) {
         </div>
       )}
       <div className="relative w-full min-w-[800px]">
-        <Table
-          className="w-full table-fixed border-collapse"
-          style={{
-            width:
-              table.getTotalSize() > 800 ? `${table.getTotalSize()}px` : "100%",
-          }}
-        >
+        <Table className="w-full table-fixed border-collapse">
           <VColumns table={table} onDebugUpdate={setDebugInfo} />
           <TableBody>
             {table.getRowModel().rows?.length ? (
@@ -75,8 +79,6 @@ export function VTable({ id }: { id: number }) {
                       className="truncate border-r border-gray-200 px-4 py-2 text-left last:border-r-0"
                       style={{
                         width: `${cell.column.getSize()}px`,
-                        minWidth: `${cell.column.getSize()}px`,
-                        maxWidth: `${cell.column.getSize()}px`,
                       }}
                     >
                       {flexRender(
