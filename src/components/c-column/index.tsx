@@ -1,27 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
-import {
-  DndContext,
-  KeyboardSensor,
-  MouseSensor,
-  TouchSensor,
-  closestCenter,
-  type DragEndEvent,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
+import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
+import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   restrictToHorizontalAxis,
   restrictToParentElement,
 } from "@dnd-kit/modifiers";
 import {
-  arrayMove,
   SortableContext,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -30,50 +15,27 @@ import { DraggableTableHeader } from "./draggable-header";
 import { DraggableCell } from "./draggable-cell";
 import { Table, TableBody, TableHeader, TableRow } from "../ui/table";
 import { columns, data } from "./data";
-
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[];
-  data: TData[];
-}
+import { useDragHooks } from "./drag-hooks";
 
 export const CColumnReorder = () => {
-  const [columnOrder, setColumnOrder] = useState<string[]>(() =>
-    columns.map((c) => c.id!),
-  );
+  const { columnOrder, onColumnOrderChange, onDragEnd, sensors } =
+    useDragHooks(columns);
 
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    onColumnOrderChange,
     state: {
       columnOrder,
     },
-    onColumnOrderChange: setColumnOrder,
   });
-
-  // Reorder columns after drag & drop
-  function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (active && over && active.id !== over.id) {
-      setColumnOrder((columnOrder) => {
-        const oldIndex = columnOrder.indexOf(active.id as string);
-        const newIndex = columnOrder.indexOf(over.id as string);
-        return arrayMove(columnOrder, oldIndex, newIndex);
-      });
-    }
-  }
-
-  const sensors = useSensors(
-    useSensor(MouseSensor, {}),
-    useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {}),
-  );
 
   return (
     <DndContext
       collisionDetection={closestCenter}
       modifiers={[restrictToHorizontalAxis, restrictToParentElement]}
-      onDragEnd={handleDragEnd}
+      onDragEnd={onDragEnd}
       sensors={sensors}
     >
       <div className="mx-auto max-w-4xl overflow-hidden rounded-md border">
@@ -96,15 +58,14 @@ export const CColumnReorder = () => {
             <TableBody>
               {table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <SortableContext
-                      key={cell.id}
-                      items={columnOrder}
-                      strategy={horizontalListSortingStrategy}
-                    >
+                  <SortableContext
+                    items={columnOrder}
+                    strategy={horizontalListSortingStrategy}
+                  >
+                    {row.getVisibleCells().map((cell) => (
                       <DraggableCell key={cell.id} cell={cell} />
-                    </SortableContext>
-                  ))}
+                    ))}
+                  </SortableContext>
                 </TableRow>
               ))}
             </TableBody>
