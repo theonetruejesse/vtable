@@ -1,14 +1,11 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { type Cell, flexRender } from "@tanstack/react-table";
+import { flexRender } from "@tanstack/react-table";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TableCell } from "../ui/table";
-
-interface DraggableCellProps<TData, TValue> {
-  cell: Cell<TData, TValue>;
-}
+import { TableCell } from "~/components/ui/table";
+import { type DraggableCellProps } from "./draggable-types";
 
 export function DraggableCell<TData, TValue>({
   cell,

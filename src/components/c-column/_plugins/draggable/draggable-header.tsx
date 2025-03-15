@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { type Header, flexRender } from "@tanstack/react-table";
+import { flexRender } from "@tanstack/react-table";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TableHead } from "../ui/table";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { TableHead } from "~/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { GripVertical } from "lucide-react";
+import { type DraggableHeaderProps } from "./draggable-types";
 
-interface DraggableTableHeaderProps<TData, TValue> {
-  header: Header<TData, TValue>;
-}
-
-export function DraggableTableHeader<TData, TValue>({
+export function DraggableHeader<TData, TValue>({
   header,
-}: DraggableTableHeaderProps<TData, TValue>) {
+}: DraggableHeaderProps<TData, TValue>) {
   const [open, setOpen] = useState(false);
 
   const { attributes, isDragging, listeners, setNodeRef, transform } =
