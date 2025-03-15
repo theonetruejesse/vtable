@@ -1,23 +1,34 @@
 import React from "react";
-import { type Table, type Header } from "@tanstack/react-table";
+import { type Header } from "@tanstack/react-table";
+import {
+  type ColumnResizingInfo,
+  type DebugResizeInfo,
+  type ResizableContextValue,
+  type ResizableProviderProps,
+} from "./resizable-types";
 
-// Type for our resize info
-type ColumnResizingInfo = {
-  columnId: string | null;
-  deltaOffset: number;
-  startWidth: number;
-};
+// Create the context with a default value
+const ResizableContext = React.createContext<ResizableContextValue | null>(
+  null,
+);
 
-// Type for debug state
-export type DebugResizeInfo = {
-  phase: "idle" | "start" | "move" | "end";
-  targetColumn: string | null;
-  oldWidth: number;
-  newWidth: number;
-};
+// Custom hook to use the resizable context
+export function useResizable() {
+  const context = React.useContext(ResizableContext);
 
-// Hook to handle drag and resize logic
-export function useColumnResize<T>(table: Table<T>) {
+  if (!context) {
+    throw new Error("useResizable must be used within a ResizableProvider");
+  }
+
+  return context;
+}
+
+// Provider component that manages column resizing state
+export function ResizableProvider({
+  table,
+  children,
+  onDebugUpdate,
+}: ResizableProviderProps) {
   // Debug state
   const [debugResize, setDebugResize] = React.useState<DebugResizeInfo>({
     phase: "idle",
@@ -37,7 +48,7 @@ export function useColumnResize<T>(table: Table<T>) {
   // Optimization: memoize the header map for quick lookups during resize
   const headerMap = React.useMemo(() => {
     const headers = table.getFlatHeaders();
-    const map = new Map<string, Header<T, unknown>>();
+    const map = new Map<string, Header<any, unknown>>();
 
     for (const header of headers) {
       map.set(header.column.id, header);
@@ -48,10 +59,10 @@ export function useColumnResize<T>(table: Table<T>) {
 
   // Track the column being resized and its current delta
   const handleResizeStart = React.useCallback(
-    (header: Header<T, unknown>) => {
+    <T,>(header: Header<T, unknown>) => {
       const originalHandler = header.getResizeHandler();
 
-      return (e: any) => {
+      return (e: React.PointerEvent) => {
         setColumnResizingInfo({
           columnId: header.column.id,
           deltaOffset: 0,
@@ -162,6 +173,31 @@ export function useColumnResize<T>(table: Table<T>) {
     }
   }, [columnResizingInfo, table]);
 
+  // Reset a column to its default size
+  const resetColumnSize = React.useCallback(
+    (columnId: string) => {
+      const column = table.getColumn(columnId);
+      if (column) {
+        column.resetSize();
+      }
+    },
+    [table],
+  );
+
+  // Calculate column sizes as CSS variables for efficient rendering
+  const columnSizeVars = React.useMemo(() => {
+    const headers = table.getFlatHeaders();
+    const colSizes: { [key: string]: number } = {};
+
+    for (let i = 0; i < headers.length; i++) {
+      const header = headers[i]!;
+      colSizes[`--header-${header.id}-size`] = header.getSize();
+      colSizes[`--col-${header.column.id}-size`] = header.column.getSize();
+    }
+
+    return colSizes;
+  }, [table.getState().columnSizingInfo, table.getState().columnSizing]);
+
   // Handle resize events
   React.useEffect(() => {
     if (columnResizingInfo.columnId === null) {
@@ -198,26 +234,43 @@ export function useColumnResize<T>(table: Table<T>) {
     };
   }, [handleResizeMove, handleResizeEnd, columnResizingInfo.columnId]);
 
-  return {
-    handleResizeStart,
-    debugResize,
-  };
-}
+  // Pass debug info to parent component whenever it changes
+  React.useEffect(() => {
+    if (onDebugUpdate) {
+      onDebugUpdate(debugResize);
+    }
+  }, [debugResize, onDebugUpdate]);
 
-// Debugger Component
-type DebuggerProps = {
-  debugInfo: DebugResizeInfo;
-};
-
-export function ResizeDebugger({ debugInfo }: DebuggerProps) {
-  if (process.env.NODE_ENV !== "development") return null;
+  // Create context value
+  const value = React.useMemo<ResizableContextValue>(
+    () => ({
+      columnResizingInfo,
+      debugResize,
+      handleResizeStart,
+      handleResizeMove,
+      handleResizeEnd,
+      resetColumnSize,
+      columnSizeVars,
+      isColumnResizing: !!table.getState().columnSizingInfo.isResizingColumn,
+    }),
+    [
+      columnResizingInfo,
+      debugResize,
+      handleResizeStart,
+      handleResizeMove,
+      handleResizeEnd,
+      resetColumnSize,
+      columnSizeVars,
+      table.getState().columnSizingInfo.isResizingColumn,
+    ],
+  );
 
   return (
-    <div className="mt-4 border border-gray-300 p-4 text-xs">
-      <div>Resize Phase: {debugInfo.phase}</div>
-      <div>Target Column: {debugInfo.targetColumn || "none"}</div>
-      <div>Old Width: {debugInfo.oldWidth}</div>
-      <div>New Width: {debugInfo.newWidth}</div>
-    </div>
+    <ResizableContext.Provider value={value}>
+      {/* Apply the column size CSS variables to the container */}
+      <div className="relative w-full min-w-[800px]" style={columnSizeVars}>
+        {children}
+      </div>
+    </ResizableContext.Provider>
   );
 }

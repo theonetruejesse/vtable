@@ -10,16 +10,14 @@ import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 
 import { VColumns } from "./_components/VColumns";
 import { useVTableQuery } from "./query-hook";
-import {
-  ResizeDebugger,
-  type DebugResizeInfo,
-} from "./_components/VColumns/resize-hook";
 import { VTableSkeleton } from "./vtable-skeleton";
+import {
+  ResizableProvider,
+  ResizableDebugger,
+  type DebugResizeInfo,
+} from "./_plugins/resizable";
 
-// Main VTable component that wraps the content with Suspense
 export function VTable({ id }: { id: number }) {
-  // We can't know the exact number of columns/rows before loading
-  // so we use reasonable defaults that match common table structures
   return (
     <Suspense fallback={<VTableSkeleton />}>
       <VTableContent id={id} />
@@ -31,7 +29,7 @@ export function VTable({ id }: { id: number }) {
 function VTableContent({ id }: { id: number }) {
   const { tableInfo, tableData, tableColumns, error } = useVTableQuery(id);
 
-  // State to store resize debug info from VColumns
+  // State to store resize debug info
   const [debugInfo, setDebugInfo] = React.useState<DebugResizeInfo>({
     phase: "idle",
     targetColumn: null,
@@ -52,20 +50,6 @@ function VTableContent({ id }: { id: number }) {
     },
   });
 
-  // Calculate column sizes as CSS variables for efficient rendering
-  const columnSizeVars = React.useMemo(() => {
-    const headers = table.getFlatHeaders();
-    const colSizes: { [key: string]: number } = {};
-
-    for (let i = 0; i < headers.length; i++) {
-      const header = headers[i]!;
-      colSizes[`--header-${header.id}-size`] = header.getSize();
-      colSizes[`--col-${header.column.id}-size`] = header.column.getSize();
-    }
-
-    return colSizes;
-  }, [table.getState().columnSizingInfo, table.getState().columnSizing]);
-
   if (!table) return null;
   if (error) return <div>Error: {error.message}</div>;
 
@@ -76,9 +60,9 @@ function VTableContent({ id }: { id: number }) {
           <h1 className="text-2xl font-bold">{tableInfo.name}</h1>
         </div>
       )}
-      <div className="relative w-full min-w-[800px]" style={columnSizeVars}>
+      <ResizableProvider table={table} onDebugUpdate={setDebugInfo}>
         <Table className="w-full table-fixed border-collapse">
-          <VColumns table={table} onDebugUpdate={setDebugInfo} />
+          <VColumns table={table} />
 
           {/* Use memoized table body during resizing operations */}
           {table.getState().columnSizingInfo.isResizingColumn ? (
@@ -87,11 +71,11 @@ function VTableContent({ id }: { id: number }) {
             <TableBodyContent table={table} />
           )}
         </Table>
-      </div>
+      </ResizableProvider>
 
       {/* Render the resize debugger if in development mode */}
       {process.env.NODE_ENV === "development" && (
-        <ResizeDebugger debugInfo={debugInfo} />
+        <ResizableDebugger debugInfo={debugInfo} />
       )}
     </div>
   );
