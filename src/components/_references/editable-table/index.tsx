@@ -1,12 +1,12 @@
 "use client";
 
 import { DataTable } from "./data-table";
-import { columns, data } from "./data";
+import { columns, data, type Person } from "./data";
 import { useEditablePlugin } from "./_plugins/editable";
 
-export default function TableDemo() {
+export function EditableTable() {
   // Initialize the editable plugin
-  const editablePlugin = useEditablePlugin({
+  const editablePlugin = useEditablePlugin<Person, unknown>({
     onValueChange: (rowIndex, columnId, value) => {
       console.log(
         `Updated row ${rowIndex}, column ${columnId} with value:`,
@@ -17,7 +17,11 @@ export default function TableDemo() {
 
   return (
     <div className="rounded-md border">
-      <DataTable columns={columns} data={data} plugins={[editablePlugin]} />
+      <DataTable<Person, unknown>
+        columns={columns}
+        data={data}
+        plugins={[editablePlugin]}
+      />
     </div>
   );
 }

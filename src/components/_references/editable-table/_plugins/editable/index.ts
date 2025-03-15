@@ -1,12 +1,11 @@
-"use client"
+"use client";
 
-import { useEditableCell } from "./editable-hooks.js"
-import type { EditablePluginOptions } from "./editable-types.js"
-import type { ColumnDef } from "@tanstack/react-table"
-import { useCallback } from "react"
+import { useEditableCell } from "./editable-hooks";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback } from "react";
 
-export function useEditablePlugin<TData extends object, TValue>(options: EditablePluginOptions<TData>) {
-  const { onValueChange } = options
+export function useEditablePlugin<TData extends object, TValue>(options: any) {
+  const { onValueChange } = options;
 
   const cell = useCallback(
     (props: any) => {
@@ -16,15 +15,15 @@ export function useEditablePlugin<TData extends object, TValue>(options: Editabl
         column: props.column,
         table: props.table,
         onValueChange,
-      })
+      });
     },
     [onValueChange],
-  )
+  );
 
   // Create a default column definition for editable cells
   const columnDefs: Partial<ColumnDef<TData, TValue>> = {
     cell: cell,
-  }
+  };
 
   // Return the plugin configuration
   return {
@@ -32,14 +31,9 @@ export function useEditablePlugin<TData extends object, TValue>(options: Editabl
     meta: {
       updateData: (rowIndex: number, columnId: string, value: unknown) => {
         if (onValueChange) {
-          onValueChange(rowIndex, columnId, value)
+          onValueChange(rowIndex, columnId, value);
         }
       },
     },
-  }
+  };
 }
-
-// Fix the export paths by adding the .ts extension
-export * from "./editable-types.js"
-export * from "./editable-hooks.js"
-

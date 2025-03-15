@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import type { ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table";
 
 // Define the Person type directly here for simplicity
 export type Person = {
-  id: string
-  firstName: string
-  lastName: string
-  age: number
-  visits: number
-  status: "relationship" | "complicated" | "single"
-  progress: number
-}
+  id: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  visits: number;
+  status: "relationship" | "complicated" | "single";
+  progress: number;
+};
 
 export const columns: ColumnDef<Person>[] = [
   {
@@ -50,11 +50,11 @@ export const columns: ColumnDef<Person>[] = [
     id: "progress",
     size: 180,
     cell: ({ row }) => {
-      const progress = row.getValue("progress") as number
-      return <div className="font-medium">{progress}%</div>
+      const progress = row.getValue("progress") as number;
+      return <div className="font-medium">{progress}%</div>;
     },
   },
-]
+];
 
 // Simple constant data array
 export const data = [
@@ -103,5 +103,4 @@ export const data = [
     status: "single" as const,
     progress: 25,
   },
-]
-
+];
