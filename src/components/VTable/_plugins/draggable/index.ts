@@ -4,6 +4,14 @@ export { DraggableProvider, useDraggable } from "./draggable-context";
 // Export the components
 export { DraggableHeader } from "./draggable-header";
 export { DraggableCell } from "./draggable-cell";
+export { DraggableResizableHeader } from "./draggable-resizable-header";
+
+// Export additional hooks
+export {
+  useDraggingState,
+  useColumnOrder,
+  useDragOptimizer,
+} from "./draggable-hooks";
 
 // Export types
 export type {

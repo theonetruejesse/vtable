@@ -1,12 +1,21 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
+import { DndContext, closestCenter } from "@dnd-kit/core";
+import {
+  restrictToHorizontalAxis,
+  restrictToParentElement,
+} from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 import { VColumns } from "./_components/VColumns";
 import { useVTableQuery } from "./query-hook";
@@ -16,6 +25,11 @@ import {
   ResizableDebugger,
   type DebugResizeInfo,
 } from "./_plugins/resizable";
+import {
+  DraggableProvider,
+  DraggableCell,
+  type DraggableContextValue,
+} from "./_plugins/draggable";
 
 export function VTable({ id }: { id: number }) {
   return (
@@ -27,6 +41,14 @@ export function VTable({ id }: { id: number }) {
 
 // Component that handles the data fetching and rendering
 function VTableContent({ id }: { id: number }) {
+  // Add a flag to track client-side hydration
+  const [isClient, setIsClient] = useState(false);
+
+  // Set isClient to true after hydration
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const { tableInfo, tableData, tableColumns, error } = useVTableQuery(id);
 
   // State to store resize debug info
@@ -48,10 +70,26 @@ function VTableContent({ id }: { id: number }) {
       size: 200,
       minSize: 120,
     },
+    state: {
+      columnOrder: React.useMemo(() => {
+        const columnIds = tableColumns
+          .map((col) => col.id)
+          .filter((id): id is string => id !== undefined);
+        console.log("Initializing column order with:", columnIds);
+        return columnIds;
+      }, [tableColumns]),
+    },
   });
 
   if (!table) return null;
   if (error) return <div>Error: {error.message}</div>;
+
+  // Console logging should only happen on client side
+  useEffect(() => {
+    if (isClient) {
+      console.log("VTable rendering with table:", table);
+    }
+  }, [isClient, table]);
 
   return (
     <div className="w-full overflow-auto">
@@ -60,68 +98,78 @@ function VTableContent({ id }: { id: number }) {
           <h1 className="text-2xl font-bold">{tableInfo.name}</h1>
         </div>
       )}
-      <ResizableProvider table={table} onDebugUpdate={setDebugInfo}>
-        <Table className="w-full table-fixed border-collapse">
-          <VColumns table={table} />
 
-          {/* Use memoized table body during resizing operations */}
-          {table.getState().columnSizingInfo.isResizingColumn ? (
-            <MemoizedTableBodyContent table={table} />
-          ) : (
-            <TableBodyContent table={table} />
+      {/* Apply both plugins by nesting providers */}
+      <ResizableProvider table={table} onDebugUpdate={setDebugInfo}>
+        <DraggableProvider table={table}>
+          {(draggableContext: DraggableContextValue) => (
+            <DndContext
+              collisionDetection={closestCenter}
+              modifiers={[restrictToHorizontalAxis, restrictToParentElement]}
+              onDragStart={draggableContext.onDragStart}
+              onDragEnd={draggableContext.onDragEnd}
+              sensors={draggableContext.sensors}
+            >
+              <Table className="w-full table-fixed border-collapse">
+                <VColumns table={table} />
+
+                {/* Table body with sortable context */}
+                <TableBody>
+                  {table.getRowModel().rows?.length ? (
+                    table.getRowModel().rows.map((row: any) => {
+                      // Log row rendering for debugging - only on client side
+                      if (isClient) {
+                        console.log(
+                          `Rendering row ${row.id} with columns:`,
+                          table.getState().columnOrder || "default order",
+                        );
+                      }
+
+                      return (
+                        <TableRow
+                          key={row.id}
+                          data-state={row.getIsSelected() && "selected"}
+                          className="border-t border-gray-200"
+                        >
+                          {/* Use the same validColumnOrder from VColumns */}
+                          <SortableContext
+                            items={table
+                              .getAllLeafColumns()
+                              .filter((column) => column.id)
+                              .map((column) => column.id)}
+                            strategy={horizontalListSortingStrategy}
+                          >
+                            {row.getVisibleCells().map((cell: any) => (
+                              <DraggableCell key={cell.id} cell={cell} />
+                            ))}
+                          </SortableContext>
+                          <TableCell className="w-full"></TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={table.getAllColumns().length + 1}
+                        className="h-24 text-center"
+                      >
+                        No results.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </DndContext>
           )}
-        </Table>
+        </DraggableProvider>
       </ResizableProvider>
 
-      {/* Render the resize debugger if in development mode */}
-      {process.env.NODE_ENV === "development" && (
+      {/* Render the resize debugger if in development mode and on client side */}
+      {isClient && process.env.NODE_ENV === "development" && (
         <ResizableDebugger debugInfo={debugInfo} />
       )}
     </div>
   );
 }
 
-// Table body component
-function TableBodyContent({ table }: { table: any }) {
-  return (
-    <TableBody>
-      {table.getRowModel().rows?.length ? (
-        table.getRowModel().rows.map((row: any) => (
-          <TableRow
-            key={row.id}
-            data-state={row.getIsSelected() && "selected"}
-            className="border-t border-gray-200"
-          >
-            {row.getVisibleCells().map((cell: any) => (
-              <TableCell
-                key={cell.id}
-                className="truncate border-r border-gray-200 px-4 py-2 text-left last:border-r-0"
-                style={{
-                  width: `calc(var(--col-${cell.column.id}-size) * 1px)`,
-                }}
-              >
-                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-              </TableCell>
-            ))}
-            <TableCell className="w-full"></TableCell>
-          </TableRow>
-        ))
-      ) : (
-        <TableRow>
-          <TableCell
-            colSpan={table.getAllColumns().length + 1}
-            className="h-24 text-center"
-          >
-            No results.
-          </TableCell>
-        </TableRow>
-      )}
-    </TableBody>
-  );
-}
-
-// Memoized version of the table body for use during resizing
-export const MemoizedTableBodyContent = React.memo(
-  TableBodyContent,
-  (prev, next) => prev.table.options.data === next.table.options.data,
-) as typeof TableBodyContent;
+// Removed TableBodyContent and MemoizedTableBodyContent since we're now using DraggableCell directly
