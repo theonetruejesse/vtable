@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useState } from "react"
+import { useState } from "react";
 import {
   type ColumnDef,
   flexRender,
@@ -8,39 +8,53 @@ import {
   getPaginationRowModel,
   useReactTable,
   type TableMeta,
-} from "@tanstack/react-table"
+} from "@tanstack/react-table";
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
+import { Button } from "~/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
   plugins?: Array<{
-    meta?: Partial<TableMeta<TData>>
-    columnDefs?: Partial<ColumnDef<TData, TValue>>
-  }>
+    meta?: Partial<TableMeta<TData>>;
+    columnDefs?: Partial<ColumnDef<TData, TValue>>;
+  }>;
 }
 
-export function DataTable<TData, TValue>({ columns, data, plugins = [] }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({
+  columns,
+  data,
+  plugins = [],
+}: DataTableProps<TData, TValue>) {
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
-  })
+  });
 
   // Merge meta from all plugins
-  const meta = plugins.reduce(
-    (acc, plugin) => {
-      return { ...acc, ...(plugin.meta || {}) }
-    },
-    {} as TableMeta<TData>,
-  )
+  const meta = plugins.reduce((acc, plugin) => {
+    return { ...acc, ...(plugin.meta || {}) };
+  }, {} as TableMeta<TData>);
 
   // Apply default column definitions from plugins
   const defaultColumn = plugins.reduce((acc, plugin) => {
-    return { ...acc, ...(plugin.columnDefs || {}) }
-  }, {})
+    return { ...acc, ...(plugin.columnDefs || {}) };
+  }, {});
 
   const table = useReactTable({
     data,
@@ -53,7 +67,7 @@ export function DataTable<TData, TValue>({ columns, data, plugins = [] }: DataTa
       pagination,
     },
     meta,
-  })
+  });
 
   return (
     <div>
@@ -65,9 +79,14 @@ export function DataTable<TData, TValue>({ columns, data, plugins = [] }: DataTa
                 {headerGroup.headers.map((header) => {
                   return (
                     <TableHead key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
@@ -75,15 +94,26 @@ export function DataTable<TData, TValue>({ columns, data, plugins = [] }: DataTa
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No results.
                 </TableCell>
               </TableRow>
@@ -94,12 +124,13 @@ export function DataTable<TData, TValue>({ columns, data, plugins = [] }: DataTa
       <div className="flex items-center justify-between space-x-2 py-4">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </p>
           <Select
             value={table.getState().pagination.pageSize.toString()}
             onValueChange={(value) => {
-              table.setPageSize(Number(value))
+              table.setPageSize(Number(value));
             }}
           >
             <SelectTrigger className="h-8 w-[70px]">
@@ -124,12 +155,16 @@ export function DataTable<TData, TValue>({ columns, data, plugins = [] }: DataTa
           >
             Previous
           </Button>
-          <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
             Next
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
-

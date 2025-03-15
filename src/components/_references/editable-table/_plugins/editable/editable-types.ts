@@ -1,22 +1,25 @@
-export type EditablePluginOptions<TData> {
-  onValueChange?: (rowIndex: number, columnId: string, value: unknown) => void
-}
+export type EditablePluginOptions<TData> = {
+  onValueChange?: (rowIndex: number, columnId: string, value: unknown) => void;
+};
 
-export type EditableCellProps<TData, TValue> {
-  getValue: () => TValue
+export type EditableCellProps<TData, TValue> = {
+  getValue: () => TValue;
   row: {
-    index: number
-  }
+    index: number;
+  };
   column: {
-    id: string
-  }
+    id: string;
+  };
   table: {
     options: {
       meta?: {
-        updateData?: (rowIndex: number, columnId: string, value: unknown) => void
-      }
-    }
-  }
-  onValueChange?: (rowIndex: number, columnId: string, value: unknown) => void
-}
-
+        updateData?: (
+          rowIndex: number,
+          columnId: string,
+          value: unknown,
+        ) => void;
+      };
+    };
+  };
+  onValueChange?: (rowIndex: number, columnId: string, value: unknown) => void;
+};

@@ -1,7 +1,7 @@
 "use client"
 
-import { useEditableCell } from "./editable-hooks.ts"
-import type { EditablePluginOptions } from "./editable-types.ts"
+import { useEditableCell } from "./editable-hooks.js"
+import type { EditablePluginOptions } from "./editable-types.js"
 import type { ColumnDef } from "@tanstack/react-table"
 import { useCallback } from "react"
 
@@ -40,6 +40,6 @@ export function useEditablePlugin<TData extends object, TValue>(options: Editabl
 }
 
 // Fix the export paths by adding the .ts extension
-export * from "./editable-types.ts"
-export * from "./editable-hooks.ts"
+export * from "./editable-types.js"
+export * from "./editable-hooks.js"
 

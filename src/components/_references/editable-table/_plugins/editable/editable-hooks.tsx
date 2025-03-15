@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState, useEffect } from "react"
-import { Input } from "@/components/ui/input"
-import type { EditableCellProps } from "./editable-types"
+import { useState, useEffect } from "react";
+import { Input } from "~/components/ui/input";
+
+import type { EditableCellProps } from "./editable-types";
 
 export function useEditableCell<TData, TValue>({
   getValue,
@@ -13,34 +14,35 @@ export function useEditableCell<TData, TValue>({
   table,
   onValueChange,
 }: EditableCellProps<TData, TValue>) {
-  const initialValue = getValue()
-  const [value, setValue] = useState(initialValue)
+  const initialValue = getValue();
+  const [value, setValue] = useState(initialValue);
 
   // When the input is blurred, we'll call our table meta's updateData function
   const onBlur = () => {
     if (table.options.meta?.updateData) {
-      table.options.meta.updateData(index, id, value)
+      table.options.meta.updateData(index, id, value);
     }
-  }
+  };
 
   // If the initialValue is changed external, sync it up with our state
   useEffect(() => {
-    setValue(initialValue)
-  }, [initialValue])
+    setValue(initialValue);
+  }, [initialValue]);
 
   // For numeric values, ensure we're handling them correctly
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value
+    const newValue = e.target.value;
 
     // If the original value is a number, try to convert the input to a number
     if (typeof initialValue === "number") {
-      const numValue = newValue === "" ? 0 : Number.parseFloat(newValue)
-      setValue(numValue as TValue)
+      const numValue = newValue === "" ? 0 : Number.parseFloat(newValue);
+      setValue(numValue as TValue);
     } else {
-      setValue(newValue as TValue)
+      setValue(newValue as TValue);
     }
-  }
+  };
 
-  return <Input value={value as string} onChange={handleChange} onBlur={onBlur} className="h-9 w-full" />
+  return (
+    <Input value={value as string} onChange={handleChange} onBlur={onBlur} />
+  );
 }
-
