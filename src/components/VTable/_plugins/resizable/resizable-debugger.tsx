@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { type DebugResizeInfo } from "./resizable-types";
 
 type DebuggerProps = {
@@ -6,7 +6,12 @@ type DebuggerProps = {
 };
 
 export function ResizableDebugger({ debugInfo }: DebuggerProps) {
-  if (process.env.NODE_ENV !== "development") return null;
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (process.env.NODE_ENV !== "development" || !isClient) return null;
 
   return (
     <div className="mt-4 border border-gray-300 p-4 text-xs">

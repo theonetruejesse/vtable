@@ -1,11 +1,7 @@
 "use client";
 
 import React, { Suspense, useState, useEffect, useCallback } from "react";
-import {
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
+import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
 import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
@@ -41,14 +37,6 @@ export function VTable({ id }: { id: number }) {
 
 // Component that handles the data fetching and rendering
 function VTableContent({ id }: { id: number }) {
-  // Add a flag to track client-side hydration
-  const [isClient, setIsClient] = useState(false);
-
-  // Set isClient to true after hydration
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   const { tableInfo, tableData, tableColumns, error } = useVTableQuery(id);
 
   // Initialize column order state
@@ -60,7 +48,6 @@ function VTableContent({ id }: { id: number }) {
       const columnIds = tableColumns
         .map((col) => col.id)
         .filter((id): id is string => id !== undefined);
-      console.log("Setting initial column order:", columnIds);
       setInitialColumnOrder(columnIds);
     }
   }, [tableColumns]);
@@ -85,7 +72,6 @@ function VTableContent({ id }: { id: number }) {
           ? updaterOrValue(columnOrder)
           : updaterOrValue;
 
-      console.log("Column order changed to:", newOrder);
       setColumnOrder(newOrder);
     },
     [columnOrder],
@@ -110,13 +96,6 @@ function VTableContent({ id }: { id: number }) {
 
   if (!table) return null;
   if (error) return <div>Error: {error.message}</div>;
-
-  // Console logging should only happen on client side
-  useEffect(() => {
-    if (isClient) {
-      console.log("VTable rendering with table:", table);
-    }
-  }, [isClient, table]);
 
   return (
     <div className="w-full overflow-auto">
@@ -144,14 +123,6 @@ function VTableContent({ id }: { id: number }) {
                 <TableBody>
                   {table.getRowModel().rows?.length ? (
                     table.getRowModel().rows.map((row: any) => {
-                      // Log row rendering for debugging - only on client side
-                      if (isClient) {
-                        console.log(
-                          `Rendering row ${row.id} with columns:`,
-                          table.getState().columnOrder || "default order",
-                        );
-                      }
-
                       return (
                         <TableRow
                           key={row.id}
@@ -174,6 +145,7 @@ function VTableContent({ id }: { id: number }) {
                               <DraggableCell key={cell.id} cell={cell} />
                             ))}
                           </SortableContext>
+                          {/* filler  button cell? */}
                           <TableCell className="w-full"></TableCell>
                         </TableRow>
                       );
@@ -194,11 +166,7 @@ function VTableContent({ id }: { id: number }) {
           )}
         </DraggableProvider>
       </ResizableProvider>
-
-      {/* Render the resize debugger if in development mode and on client side */}
-      {isClient && process.env.NODE_ENV === "development" && (
-        <ResizableDebugger debugInfo={debugInfo} />
-      )}
+      <ResizableDebugger debugInfo={debugInfo} />
     </div>
   );
 }
