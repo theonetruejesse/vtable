@@ -52,6 +52,20 @@ function VTableContent({ id }: { id: number }) {
     },
   });
 
+  // Calculate column sizes as CSS variables for efficient rendering
+  const columnSizeVars = React.useMemo(() => {
+    const headers = table.getFlatHeaders();
+    const colSizes: { [key: string]: number } = {};
+
+    for (let i = 0; i < headers.length; i++) {
+      const header = headers[i]!;
+      colSizes[`--header-${header.id}-size`] = header.getSize();
+      colSizes[`--col-${header.column.id}-size`] = header.column.getSize();
+    }
+
+    return colSizes;
+  }, [table.getState().columnSizingInfo, table.getState().columnSizing]);
+
   if (!table) return null;
   if (error) return <div>Error: {error.message}</div>;
 
@@ -62,45 +76,16 @@ function VTableContent({ id }: { id: number }) {
           <h1 className="text-2xl font-bold">{tableInfo.name}</h1>
         </div>
       )}
-      <div className="relative w-full min-w-[800px]">
+      <div className="relative w-full min-w-[800px]" style={columnSizeVars}>
         <Table className="w-full table-fixed border-collapse">
           <VColumns table={table} onDebugUpdate={setDebugInfo} />
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-t border-gray-200"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="truncate border-r border-gray-200 px-4 py-2 text-left last:border-r-0"
-                      style={{
-                        width: `${cell.column.getSize()}px`,
-                      }}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                  <TableCell className="w-full"></TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={tableColumns.length + 1}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
+
+          {/* Use memoized table body during resizing operations */}
+          {table.getState().columnSizingInfo.isResizingColumn ? (
+            <MemoizedTableBodyContent table={table} />
+          ) : (
+            <TableBodyContent table={table} />
+          )}
         </Table>
       </div>
 
@@ -111,3 +96,48 @@ function VTableContent({ id }: { id: number }) {
     </div>
   );
 }
+
+// Table body component
+function TableBodyContent({ table }: { table: any }) {
+  return (
+    <TableBody>
+      {table.getRowModel().rows?.length ? (
+        table.getRowModel().rows.map((row: any) => (
+          <TableRow
+            key={row.id}
+            data-state={row.getIsSelected() && "selected"}
+            className="border-t border-gray-200"
+          >
+            {row.getVisibleCells().map((cell: any) => (
+              <TableCell
+                key={cell.id}
+                className="truncate border-r border-gray-200 px-4 py-2 text-left last:border-r-0"
+                style={{
+                  width: `calc(var(--col-${cell.column.id}-size) * 1px)`,
+                }}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </TableCell>
+            ))}
+            <TableCell className="w-full"></TableCell>
+          </TableRow>
+        ))
+      ) : (
+        <TableRow>
+          <TableCell
+            colSpan={table.getAllColumns().length + 1}
+            className="h-24 text-center"
+          >
+            No results.
+          </TableCell>
+        </TableRow>
+      )}
+    </TableBody>
+  );
+}
+
+// Memoized version of the table body for use during resizing
+export const MemoizedTableBodyContent = React.memo(
+  TableBodyContent,
+  (prev, next) => prev.table.options.data === next.table.options.data,
+) as typeof TableBodyContent;

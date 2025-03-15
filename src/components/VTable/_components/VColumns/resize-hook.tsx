@@ -34,35 +34,53 @@ export function useColumnResize<T>(table: Table<T>) {
       startWidth: 0,
     });
 
+  // Optimization: memoize the header map for quick lookups during resize
+  const headerMap = React.useMemo(() => {
+    const headers = table.getFlatHeaders();
+    const map = new Map<string, Header<T, unknown>>();
+
+    for (const header of headers) {
+      map.set(header.column.id, header);
+    }
+
+    return map;
+  }, [table]);
+
   // Track the column being resized and its current delta
-  const handleResizeStart = React.useCallback((header: Header<T, unknown>) => {
-    const originalHandler = header.getResizeHandler();
+  const handleResizeStart = React.useCallback(
+    (header: Header<T, unknown>) => {
+      const originalHandler = header.getResizeHandler();
 
-    return (e: any) => {
-      setColumnResizingInfo({
-        columnId: header.column.id,
-        deltaOffset: 0,
-        startWidth: header.getSize(),
-      });
+      return (e: any) => {
+        setColumnResizingInfo({
+          columnId: header.column.id,
+          deltaOffset: 0,
+          startWidth: header.getSize(),
+        });
 
-      setDebugResize({
-        phase: "start",
-        targetColumn: header.column.id,
-        oldWidth: header.getSize(),
-        newWidth: header.getSize(),
-      });
+        setDebugResize({
+          phase: "start",
+          targetColumn: header.column.id,
+          oldWidth: header.getSize(),
+          newWidth: header.getSize(),
+        });
 
-      originalHandler(e);
-    };
-  }, []);
+        // Update table state to indicate resizing is happening
+        table.setColumnSizingInfo({
+          ...table.getState().columnSizingInfo,
+          isResizingColumn: header.column.id,
+        });
+
+        originalHandler(e);
+      };
+    },
+    [table],
+  );
 
   const handleResizeMove = React.useCallback(
     (e: PointerEvent) => {
       if (columnResizingInfo.columnId) {
-        const header = table
-          .getHeaderGroups()
-          .flatMap((group) => group.headers)
-          .find((h) => h.column.id === columnResizingInfo.columnId);
+        const header = headerMap.get(columnResizingInfo.columnId);
 
         if (header) {
           const headerEl = document.querySelector(
@@ -89,7 +107,7 @@ export function useColumnResize<T>(table: Table<T>) {
               newWidth: newWidth,
             });
 
-            // Apply the width change immediately only to the target column
+            // Apply the width change immediately to just the column being resized
             table.setColumnSizing((prev) => ({
               ...prev,
               [header.column.id]: newWidth,
@@ -98,7 +116,7 @@ export function useColumnResize<T>(table: Table<T>) {
         }
       }
     },
-    [columnResizingInfo.columnId, columnResizingInfo.startWidth, table],
+    [columnResizingInfo, headerMap, table],
   );
 
   // Apply the resize when finished
@@ -146,19 +164,24 @@ export function useColumnResize<T>(table: Table<T>) {
 
   // Handle resize events
   React.useEffect(() => {
+    if (columnResizingInfo.columnId === null) {
+      return; // Skip effect if no column is being resized
+    }
+
     // Use capture phase to ensure we catch all events
     const handlePointerMoveCapture = (e: PointerEvent) => {
-      handleResizeMove(e);
+      // Use requestAnimationFrame for better performance
+      requestAnimationFrame(() => {
+        handleResizeMove(e);
+      });
     };
 
     const handlePointerUpCapture = (e: PointerEvent) => {
-      if (columnResizingInfo.columnId !== null) {
-        // Force end of resize regardless of where the pointer was released
-        handleResizeEnd();
-        // Prevent any further events in this sequence
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      // Force end of resize regardless of where the pointer was released
+      handleResizeEnd();
+      // Prevent any further events in this sequence
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     // Add listeners with capture phase to ensure they catch all events
