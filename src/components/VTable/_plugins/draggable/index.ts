@@ -7,11 +7,7 @@ export { DraggableCell } from "./draggable-cell";
 export { DraggableResizableHeader } from "./draggable-resizable-header";
 
 // Export additional hooks
-export {
-  useDraggingState,
-  useColumnOrder,
-  useDragOptimizer,
-} from "./draggable-hooks";
+export { useColumnOrder, useDragOptimizer } from "./draggable-hooks";
 
 // Export types
 export type {

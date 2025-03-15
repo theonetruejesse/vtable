@@ -13,9 +13,9 @@ import {
   useDraggable,
 } from "../../_plugins/draggable";
 
-type VColumnsProps = {
+interface VColumnsProps {
   table: VTable;
-};
+}
 
 export const VColumns = React.memo(
   ({ table }: VColumnsProps) => {
@@ -30,15 +30,6 @@ export const VColumns = React.memo(
     // Get draggable context
     const { columnOrder, isDragging } = useDraggable();
 
-    // Log column order and dragging state - only on client
-    useEffect(() => {
-      if (isClient) {
-        console.log("VColumns rendering with column order:", columnOrder);
-        console.log("Table column order state:", table.getState().columnOrder);
-        console.log("isDragging:", isDragging);
-      }
-    }, [isClient, columnOrder, table, isDragging]);
-
     // Calculate the total width of all columns
     const totalTableWidth = React.useMemo(() => {
       return table.getTotalSize();
@@ -48,15 +39,6 @@ export const VColumns = React.memo(
     const validColumnOrder = React.useMemo(() => {
       // Always use the latest column order from the table state
       const currentTableOrder = table.getState().columnOrder;
-
-      // Log what we're using for ordering - only on client
-      if (isClient) {
-        console.log(
-          "VColumns using column order:",
-          currentTableOrder,
-          currentTableOrder?.length,
-        );
-      }
 
       // Use table state if available, otherwise fall back to leaf columns
       if (currentTableOrder && currentTableOrder.length > 0) {
@@ -70,10 +52,6 @@ export const VColumns = React.memo(
         .getAllLeafColumns()
         .filter((column) => column.id)
         .map((column) => column.id);
-
-      if (isClient) {
-        console.log("Falling back to leaf column IDs:", leafColumnIds);
-      }
 
       return leafColumnIds;
     }, [isClient, table, table.getState().columnOrder]); // Explicitly depend on columnOrder

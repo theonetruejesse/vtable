@@ -15,10 +15,8 @@ import {
 } from "./draggable-types";
 import { OnChangeFn, ColumnOrderState } from "@tanstack/react-table";
 
-// Create a context for draggable functionality
 const DraggableContext = createContext<DraggableContextValue | null>(null);
 
-// Custom hook to use the draggable context
 export function useDraggable() {
   const context = useContext(DraggableContext);
 

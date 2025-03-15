@@ -2,14 +2,6 @@ import React from "react";
 import { useDraggable } from "./draggable-context";
 
 /**
- * Hook to check if the table is currently in dragging mode
- */
-export function useDraggingState() {
-  const { isDragging } = useDraggable();
-  return isDragging;
-}
-
-/**
  * Hook to get the current column order
  */
 export function useColumnOrder() {

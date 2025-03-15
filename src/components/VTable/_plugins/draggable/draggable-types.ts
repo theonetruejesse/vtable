@@ -6,7 +6,6 @@ import {
 } from "@dnd-kit/core";
 import {
   Cell,
-  ColumnDef,
   Header,
   OnChangeFn,
   ColumnOrderState,
