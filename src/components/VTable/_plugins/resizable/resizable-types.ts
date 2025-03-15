@@ -16,32 +16,6 @@ export type DebugResizeInfo = {
   newWidth: number;
 };
 
-// Type for the context value
-export type ResizableContextValue = {
-  // State
-  columnResizingInfo: ColumnResizingInfo;
-  debugResize: DebugResizeInfo;
-
-  // Actions
-  handleResizeStart: <T>(
-    header: Header<T, unknown>,
-  ) => (e: React.PointerEvent) => void;
-  handleResizeMove: (e: PointerEvent) => void;
-  handleResizeEnd: () => void;
-  resetColumnSize: (columnId: string) => void;
-
-  // Computed
-  columnSizeVars: { [key: string]: number };
-  isColumnResizing: boolean;
-};
-
-// Props for the ResizableProvider
-export type ResizableProviderProps = {
-  table: VTable;
-  children: React.ReactNode;
-  onDebugUpdate?: (debugInfo: DebugResizeInfo) => void;
-};
-
 // Props for the ResizableHeader component
 export type ResizableHeaderProps = {
   header: Header<any, unknown>;

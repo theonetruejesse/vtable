@@ -202,5 +202,3 @@ function VTableContent({ id }: { id: number }) {
     </div>
   );
 }
-
-// Removed TableBodyContent and MemoizedTableBodyContent since we're now using DraggableCell directly

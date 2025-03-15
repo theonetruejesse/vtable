@@ -3,9 +3,26 @@ import { type Header } from "@tanstack/react-table";
 import {
   type ColumnResizingInfo,
   type DebugResizeInfo,
-  type ResizableContextValue,
-  type ResizableProviderProps,
 } from "./resizable-types";
+import { VTable } from "../../vtable-types";
+
+type ResizableContextValue = {
+  // State
+  columnResizingInfo: ColumnResizingInfo;
+  debugResize: DebugResizeInfo;
+
+  // Actions
+  handleResizeStart: <T>(
+    header: Header<T, unknown>,
+  ) => (e: React.PointerEvent) => void;
+  handleResizeMove: (e: PointerEvent) => void;
+  handleResizeEnd: () => void;
+  resetColumnSize: (columnId: string) => void;
+
+  // Computed
+  columnSizeVars: { [key: string]: number };
+  isColumnResizing: boolean;
+};
 
 // Create the context with a default value
 const ResizableContext = React.createContext<ResizableContextValue | null>(
@@ -23,7 +40,11 @@ export function useResizable() {
   return context;
 }
 
-// Provider component that manages column resizing state
+interface ResizableProviderProps {
+  table: VTable;
+  children: React.ReactNode;
+  onDebugUpdate?: (debugInfo: DebugResizeInfo) => void;
+}
 export function ResizableProvider({
   table,
   children,

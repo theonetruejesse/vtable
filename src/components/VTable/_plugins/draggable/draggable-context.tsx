@@ -40,6 +40,24 @@ export function DraggableProvider({ table, children }: DraggableProviderProps) {
   // Track dragging state
   const [isDragging, setIsDragging] = useState(false);
 
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    // Require a minimal distance to start dragging
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    // Require a minimal distance to start dragging
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {}),
+  );
+
   // Handle drag start
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
@@ -113,24 +131,6 @@ export function DraggableProvider({ table, children }: DraggableProviderProps) {
       }
     },
     [table],
-  );
-
-  // Set up sensors for drag and drop
-  const sensors = useSensors(
-    useSensor(MouseSensor, {
-      // Require a minimal distance to start dragging
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-    useSensor(TouchSensor, {
-      // Require a minimal distance to start dragging
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {}),
   );
 
   // Get the current column order from the table
