@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { type Metadata } from "next";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { ReactScan } from "~/components/react-scan";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -18,6 +19,7 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
+      <ReactScan />
       <body>
         <TRPCReactProvider>
           <LayoutWrapper>{children}</LayoutWrapper>
