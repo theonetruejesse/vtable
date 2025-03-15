@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
-import { TableHeader, TableRow, TableHead } from "~/components/ui/table";
+import { TableRow, TableHead } from "~/components/ui/table";
 import { Plus } from "lucide-react";
 import { type VTable } from "../../vtable-types";
 import {

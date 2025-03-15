@@ -33,9 +33,8 @@ const ResizableContext = React.createContext<ResizableContextValue | null>(
 export function useResizable() {
   const context = React.useContext(ResizableContext);
 
-  if (!context) {
+  if (!context)
     throw new Error("useResizable must be used within a ResizableProvider");
-  }
 
   return context;
 }
@@ -114,38 +113,37 @@ export function ResizableProvider({
       if (columnResizingInfo.columnId) {
         const header = headerMap.get(columnResizingInfo.columnId);
 
-        if (header) {
-          const headerEl = document.querySelector(
-            `[data-column-id="${header.column.id}"]`,
-          );
-          if (headerEl) {
-            const headerRect = headerEl.getBoundingClientRect();
-            const startX = headerRect.left;
-            const mouseX = e.clientX;
+        if (!header) return;
 
-            // Calculate the new width directly from the mouse position
-            const newWidth = Math.max(mouseX - startX, 120); // Minimum width of 120px
+        const headerEl = document.querySelector(
+          `[data-column-id="${header.column.id}"]`,
+        );
+        if (!headerEl) return;
+        const headerRect = headerEl.getBoundingClientRect();
+        const startX = headerRect.left;
+        const mouseX = e.clientX;
 
-            // Update the delta offset based on the new width
-            setColumnResizingInfo((prev) => ({
-              ...prev,
-              deltaOffset: newWidth - prev.startWidth,
-            }));
+        // Calculate the new width directly from the mouse position
+        const newWidth = Math.max(mouseX - startX, 120); // Minimum width of 120px
 
-            setDebugResize({
-              phase: "move",
-              targetColumn: header.column.id,
-              oldWidth: columnResizingInfo.startWidth,
-              newWidth: newWidth,
-            });
+        // Update the delta offset based on the new width
+        setColumnResizingInfo((prev) => ({
+          ...prev,
+          deltaOffset: newWidth - prev.startWidth,
+        }));
 
-            // Apply the width change immediately to just the column being resized
-            table.setColumnSizing((prev) => ({
-              ...prev,
-              [header.column.id]: newWidth,
-            }));
-          }
-        }
+        setDebugResize({
+          phase: "move",
+          targetColumn: header.column.id,
+          oldWidth: columnResizingInfo.startWidth,
+          newWidth: newWidth,
+        });
+
+        // Apply the width change immediately to just the column being resized
+        table.setColumnSizing((prev) => ({
+          ...prev,
+          [header.column.id]: newWidth,
+        }));
       }
     },
     [columnResizingInfo, headerMap, table],
