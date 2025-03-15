@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { TableHeader, TableRow, TableHead } from "~/components/ui/table";
 import { Plus } from "lucide-react";
@@ -12,58 +12,54 @@ import {
   DraggableResizableHeader,
   useDraggable,
 } from "../../_plugins/draggable";
+import { useIsClient } from "../../utils/is-client-hook";
 
 interface VColumnsProps {
   table: VTable;
 }
 
+// Helper function to calculate valid column order
+const getValidColumnOrder = (table: VTable) => {
+  const currentTableOrder = table.getState().columnOrder;
+  if (currentTableOrder && currentTableOrder.length > 0) {
+    return currentTableOrder.filter(Boolean);
+  }
+  return table
+    .getAllLeafColumns()
+    .filter((column) => column.id)
+    .map((column) => column.id);
+};
+
+// Main Component
 export const VColumns = React.memo(
   ({ table }: VColumnsProps) => {
-    // Add a flag to track client-side hydration
-    const [isClient, setIsClient] = useState(false);
+    const isClient = useIsClient();
+    const { columnOrder } = useDraggable();
 
-    // Set isClient to true after hydration
-    useEffect(() => {
-      setIsClient(true);
-    }, []);
+    // Memoize valid column order
+    const validColumnOrder = useMemo(
+      () => getValidColumnOrder(table),
+      [table, columnOrder],
+    );
 
-    // Get draggable context
-    const { columnOrder, isDragging } = useDraggable();
-
-    // Calculate the total width of all columns
-    const totalTableWidth = React.useMemo(() => {
-      return table.getTotalSize();
-    }, [table]);
-
-    // Ensure we never have undefined values in columnOrder and always use the latest table state
-    const validColumnOrder = React.useMemo(() => {
-      // Always use the latest column order from the table state
-      const currentTableOrder = table.getState().columnOrder;
-
-      // Use table state if available, otherwise fall back to leaf columns
-      if (currentTableOrder && currentTableOrder.length > 0) {
-        // Filter out any undefined values for safety
-        return currentTableOrder.filter(Boolean);
-      }
-
-      // Always use non-null column IDs from the current table state to ensure consistency
-      // between server and client rendering
-      const leafColumnIds = table
-        .getAllLeafColumns()
-        .filter((column) => column.id)
-        .map((column) => column.id);
-
-      return leafColumnIds;
-    }, [isClient, table, table.getState().columnOrder]); // Explicitly depend on columnOrder
-
-    // Render a simplified version during server-side rendering
-    if (!isClient) {
-      return (
-        <TableHeader className="border-none">
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="border-none">
-              {/* Render static headers during SSR */}
-              {headerGroup.headers.map((header) => (
+    // Render the table header
+    return (
+      <TableHeader className="border-none">
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id} className="border-none">
+            {/* Conditionally render SortableContext and DraggableResizableHeader */}
+            {isClient ? (
+              <SortableContext
+                items={validColumnOrder}
+                strategy={horizontalListSortingStrategy}
+              >
+                {headerGroup.headers.map((header) => (
+                  <DraggableResizableHeader key={header.id} header={header} />
+                ))}
+              </SortableContext>
+            ) : (
+              // Render static headers during SSR
+              headerGroup.headers.map((header) => (
                 <TableHead
                   key={header.id}
                   data-column-id={header.column.id}
@@ -83,37 +79,9 @@ export const VColumns = React.memo(
                     </div>
                   </div>
                 </TableHead>
-              ))}
-              <TableHead className="w-full">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  title="Add column"
-                  aria-label="Add column"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </TableHead>
-            </TableRow>
-          ))}
-        </TableHeader>
-      );
-    }
-
-    return (
-      <TableHeader className="border-none">
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id} className="border-none">
-            <SortableContext
-              items={validColumnOrder}
-              strategy={horizontalListSortingStrategy}
-            >
-              {headerGroup.headers.map((header) => (
-                // Use the combined DraggableResizableHeader
-                <DraggableResizableHeader key={header.id} header={header} />
-              ))}
-            </SortableContext>
+              ))
+            )}
+            {/* Add column button */}
             <TableHead className="w-full">
               <Button
                 variant="ghost"
@@ -132,39 +100,17 @@ export const VColumns = React.memo(
   },
   // Custom equality function to prevent unnecessary re-renders
   (prevProps, nextProps) => {
-    // Only re-render if column sizing or visibility has changed
-    if (
-      prevProps.table.getState().columnSizing !==
-      nextProps.table.getState().columnSizing
-    ) {
-      return false;
-    }
+    const prevState = prevProps.table.getState();
+    const nextState = nextProps.table.getState();
 
-    // Check if column order has changed
-    if (
-      prevProps.table.getState().columnOrder !==
-      nextProps.table.getState().columnOrder
-    ) {
-      return false;
-    }
-
-    // Check if columns have changed
-    if (
-      prevProps.table.getAllColumns().length !==
-      nextProps.table.getAllColumns().length
-    ) {
-      return false;
-    }
-
-    // If we're currently resizing, allow renders
-    if (
-      prevProps.table.getState().columnSizingInfo.isResizingColumn ||
-      nextProps.table.getState().columnSizingInfo.isResizingColumn
-    ) {
-      return false;
-    }
-
-    // Default to preventing re-render
-    return true;
+    // Only re-render if column sizing, order, or visibility has changed
+    return (
+      prevState.columnSizing === nextState.columnSizing &&
+      prevState.columnOrder === nextState.columnOrder &&
+      prevProps.table.getAllColumns().length ===
+        nextProps.table.getAllColumns().length &&
+      !prevState.columnSizingInfo.isResizingColumn &&
+      !nextState.columnSizingInfo.isResizingColumn
+    );
   },
 );
