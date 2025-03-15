@@ -19,7 +19,7 @@ type RootLayoutProps = {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
-      <ReactScan />
+      {/* <ReactScan /> */}
       <body>
         <TRPCReactProvider>
           <LayoutWrapper>{children}</LayoutWrapper>
