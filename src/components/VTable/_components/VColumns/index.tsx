@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { Button } from "~/components/ui/button";
 import { TableHeader, TableRow, TableHead } from "~/components/ui/table";
 import { Plus } from "lucide-react";
@@ -44,7 +44,7 @@ export const VColumns = React.memo(
 
     // Render the table header
     return (
-      <TableHeader className="border-none">
+      <>
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id} className="border-none">
             {/* Conditionally render SortableContext and DraggableResizableHeader */}
@@ -95,7 +95,7 @@ export const VColumns = React.memo(
             </TableHead>
           </TableRow>
         ))}
-      </TableHeader>
+      </>
     );
   },
   // Custom equality function to prevent unnecessary re-renders

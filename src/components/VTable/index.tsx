@@ -2,16 +2,18 @@
 
 import React, { Suspense, useState, useEffect, useCallback } from "react";
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Table, TableBody, TableCell, TableRow } from "~/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import {
   restrictToHorizontalAxis,
   restrictToParentElement,
 } from "@dnd-kit/modifiers";
-import {
-  SortableContext,
-  horizontalListSortingStrategy,
-} from "@dnd-kit/sortable";
 
 import { VColumns } from "./_components/VColumns";
 import { useVTableQuery } from "./query-hook";
@@ -26,6 +28,7 @@ import {
   DraggableCell,
   type DraggableContextValue,
 } from "./_plugins/draggable";
+import { VRows } from "./_components/VRows";
 
 export function VTable({ id }: { id: number }) {
   return (
@@ -117,49 +120,11 @@ function VTableContent({ id }: { id: number }) {
               sensors={draggableContext.sensors}
             >
               <Table className="w-full table-fixed border-collapse">
-                <VColumns table={table} />
-
-                {/* Table body with sortable context */}
+                <TableHeader className="border-none">
+                  <VColumns table={table} />
+                </TableHeader>
                 <TableBody>
-                  {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row: any) => {
-                      return (
-                        <TableRow
-                          key={row.id}
-                          data-state={row.getIsSelected() && "selected"}
-                          className="border-t border-gray-200"
-                        >
-                          {/* Use the table's current column order for SortableContext */}
-                          <SortableContext
-                            items={
-                              table.getState().columnOrder?.length > 0
-                                ? table.getState().columnOrder
-                                : table
-                                    .getAllLeafColumns()
-                                    .filter((column) => column.id)
-                                    .map((column) => column.id)
-                            }
-                            strategy={horizontalListSortingStrategy}
-                          >
-                            {row.getVisibleCells().map((cell: any) => (
-                              <DraggableCell key={cell.id} cell={cell} />
-                            ))}
-                          </SortableContext>
-                          {/* filler  button cell? */}
-                          <TableCell className="w-full"></TableCell>
-                        </TableRow>
-                      );
-                    })
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={table.getAllColumns().length + 1}
-                        className="h-24 text-center"
-                      >
-                        No results.
-                      </TableCell>
-                    </TableRow>
-                  )}
+                  <VRows table={table} />
                 </TableBody>
               </Table>
             </DndContext>
