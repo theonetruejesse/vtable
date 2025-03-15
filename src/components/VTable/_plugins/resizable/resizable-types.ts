@@ -1,5 +1,4 @@
-import { type Table, type Header } from "@tanstack/react-table";
-import { type VTable } from "../../vtable-types";
+import { type Header } from "@tanstack/react-table";
 
 // Type for column resizing info
 export type ColumnResizingInfo = {

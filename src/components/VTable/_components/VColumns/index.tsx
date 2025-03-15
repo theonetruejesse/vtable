@@ -8,11 +8,9 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { flexRender } from "@tanstack/react-table";
-import {
-  DraggableResizableHeader,
-  useDraggable,
-} from "../../_plugins/draggable";
+import { DraggableHeader, useDraggable } from "../../_plugins/draggable";
 import { useIsClient } from "../../utils/is-client-hook";
+import { ResizeHandle } from "../../_plugins/resizable";
 
 interface VColumnsProps {
   table: VTable;
@@ -54,7 +52,9 @@ export const VColumns = React.memo(
                 strategy={horizontalListSortingStrategy}
               >
                 {headerGroup.headers.map((header) => (
-                  <DraggableResizableHeader key={header.id} header={header} />
+                  <DraggableHeader key={header.id} header={header}>
+                    <ResizeHandle header={header} />
+                  </DraggableHeader>
                 ))}
               </SortableContext>
             ) : (
