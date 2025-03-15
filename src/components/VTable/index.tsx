@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect, useCallback } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -51,6 +51,20 @@ function VTableContent({ id }: { id: number }) {
 
   const { tableInfo, tableData, tableColumns, error } = useVTableQuery(id);
 
+  // Initialize column order state
+  const [initialColumnOrder, setInitialColumnOrder] = useState<string[]>([]);
+
+  // Initialize column order once we have table columns
+  useEffect(() => {
+    if (tableColumns.length > 0 && initialColumnOrder.length === 0) {
+      const columnIds = tableColumns
+        .map((col) => col.id)
+        .filter((id): id is string => id !== undefined);
+      console.log("Setting initial column order:", columnIds);
+      setInitialColumnOrder(columnIds);
+    }
+  }, [tableColumns]);
+
   // State to store resize debug info
   const [debugInfo, setDebugInfo] = React.useState<DebugResizeInfo>({
     phase: "idle",
@@ -58,6 +72,24 @@ function VTableContent({ id }: { id: number }) {
     oldWidth: 0,
     newWidth: 0,
   });
+
+  // State to track column order changes
+  const [columnOrder, setColumnOrder] = useState<string[]>([]);
+
+  // Update local columnOrder state when table column order changes
+  const onColumnOrderChange = useCallback(
+    (updaterOrValue: any) => {
+      // Handle both direct values and updater functions
+      const newOrder =
+        typeof updaterOrValue === "function"
+          ? updaterOrValue(columnOrder)
+          : updaterOrValue;
+
+      console.log("Column order changed to:", newOrder);
+      setColumnOrder(newOrder);
+    },
+    [columnOrder],
+  );
 
   const table = useReactTable({
     data: tableData,
@@ -71,14 +103,9 @@ function VTableContent({ id }: { id: number }) {
       minSize: 120,
     },
     state: {
-      columnOrder: React.useMemo(() => {
-        const columnIds = tableColumns
-          .map((col) => col.id)
-          .filter((id): id is string => id !== undefined);
-        console.log("Initializing column order with:", columnIds);
-        return columnIds;
-      }, [tableColumns]),
+      columnOrder: columnOrder.length > 0 ? columnOrder : initialColumnOrder,
     },
+    onColumnOrderChange: onColumnOrderChange,
   });
 
   if (!table) return null;
@@ -131,12 +158,16 @@ function VTableContent({ id }: { id: number }) {
                           data-state={row.getIsSelected() && "selected"}
                           className="border-t border-gray-200"
                         >
-                          {/* Use the same validColumnOrder from VColumns */}
+                          {/* Use the table's current column order for SortableContext */}
                           <SortableContext
-                            items={table
-                              .getAllLeafColumns()
-                              .filter((column) => column.id)
-                              .map((column) => column.id)}
+                            items={
+                              table.getState().columnOrder?.length > 0
+                                ? table.getState().columnOrder
+                                : table
+                                    .getAllLeafColumns()
+                                    .filter((column) => column.id)
+                                    .map((column) => column.id)
+                            }
                             strategy={horizontalListSortingStrategy}
                           >
                             {row.getVisibleCells().map((cell: any) => (

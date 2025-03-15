@@ -52,23 +52,31 @@ export const VColumns = React.memo(
       // Log what we're using for ordering - only on client
       if (isClient) {
         console.log(
-          "Using column order for SortableContext:",
-          currentTableOrder || "falling back to leaf columns",
+          "VColumns using column order:",
+          currentTableOrder,
+          currentTableOrder?.length,
         );
       }
 
       // Use table state if available, otherwise fall back to leaf columns
       if (currentTableOrder && currentTableOrder.length > 0) {
-        return currentTableOrder;
+        // Filter out any undefined values for safety
+        return currentTableOrder.filter(Boolean);
       }
 
       // Always use non-null column IDs from the current table state to ensure consistency
       // between server and client rendering
-      return table
+      const leafColumnIds = table
         .getAllLeafColumns()
         .filter((column) => column.id)
         .map((column) => column.id);
-    }, [isClient, table]);
+
+      if (isClient) {
+        console.log("Falling back to leaf column IDs:", leafColumnIds);
+      }
+
+      return leafColumnIds;
+    }, [isClient, table, table.getState().columnOrder]); // Explicitly depend on columnOrder
 
     // Render a simplified version during server-side rendering
     if (!isClient) {

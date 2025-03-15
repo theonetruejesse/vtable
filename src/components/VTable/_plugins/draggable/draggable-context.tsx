@@ -71,52 +71,43 @@ export function DraggableProvider({ table, children }: DraggableProviderProps) {
       if (active && over && active.id !== over.id) {
         console.log(`Reordering: moving ${active.id} over ${over.id}`);
 
-        // We directly update the table's column order
-        table.setColumnOrder((currentOrder) => {
-          // If currentOrder is empty, get column IDs from the table
-          let safeCurrentOrder = currentOrder;
-          if (!safeCurrentOrder || safeCurrentOrder.length === 0) {
-            // Get all column IDs that exist in the table
-            safeCurrentOrder = table
-              .getAllColumns()
-              .map((col) => col.id)
-              .filter((id): id is string => id !== undefined);
+        // Get the current column order
+        let currentOrder = table.getState().columnOrder;
 
-            console.log(
-              "Creating column order from table columns:",
-              safeCurrentOrder,
-            );
-          }
+        // If currentOrder is empty, get it from the table columns
+        if (!currentOrder || currentOrder.length === 0) {
+          currentOrder = table
+            .getAllColumns()
+            .map((col) => col.id)
+            .filter((id): id is string => id !== undefined);
 
-          console.log("Current column order:", safeCurrentOrder);
+          console.log("Created column order from table columns:", currentOrder);
+        }
 
-          // Convert IDs to strings for consistency
-          const activeId = String(active.id);
-          const overId = String(over.id);
+        // Convert IDs to strings for consistency
+        const activeId = String(active.id);
+        const overId = String(over.id);
 
-          // Find positions
-          const oldIndex = safeCurrentOrder.indexOf(activeId);
-          const newIndex = safeCurrentOrder.indexOf(overId);
+        // Find positions
+        const oldIndex = currentOrder.indexOf(activeId);
+        const newIndex = currentOrder.indexOf(overId);
 
-          console.log(`Moving from index ${oldIndex} to ${newIndex}`);
+        console.log(`Moving from index ${oldIndex} to ${newIndex}`);
 
-          // Only reorder if we found valid positions
-          if (oldIndex !== -1 && newIndex !== -1) {
-            // Create new array with reordered items
-            const newOrder = arrayMove(safeCurrentOrder, oldIndex, newIndex);
-            console.log("New column order:", newOrder);
+        // Only reorder if we found valid positions
+        if (oldIndex !== -1 && newIndex !== -1) {
+          // Create new array with reordered items
+          const newOrder = arrayMove(currentOrder, oldIndex, newIndex);
+          console.log("Setting new column order:", newOrder);
 
-            // Force a re-render after column order is updated
-            setTimeout(() => {
-              console.log("State after reorder:", table.getState().columnOrder);
-            }, 0);
+          // Directly set the new column order
+          table.setColumnOrder(newOrder);
 
-            return newOrder;
-          }
-
-          // Return unchanged if we couldn't find positions
-          return safeCurrentOrder;
-        });
+          // Verify the table state after update
+          setTimeout(() => {
+            console.log("State after reorder:", table.getState().columnOrder);
+          }, 0);
+        }
       } else {
         console.log("No reordering needed or invalid drag operation");
       }
